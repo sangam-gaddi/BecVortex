@@ -48,7 +48,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      toast.success(`Welcome back, ${data.student.studentName}! Redirecting...`, {
+      toast.success(`Welcome back, ${data.user?.name || data.user?.usn || 'Student'}! Redirecting...`, {
         duration: 2000,
       });
 

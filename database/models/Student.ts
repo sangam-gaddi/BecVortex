@@ -26,6 +26,11 @@ export interface IStudent extends Document {
   activeSessionId?: string;
   isRegistered: boolean;
 
+  // Academic Tracking fields
+  currentSemester: number;
+  backlogs: string[]; // references Subject.subjectCode
+  registeredSubjects: string[]; // references Subject.subjectCode
+
   // Fee tracking
   paidFees: string[];
 
@@ -69,6 +74,21 @@ const StudentSchema: Schema = new Schema({
     type: String,
     required: true,
     enum: ['KCET', 'COMEDK', 'Management', 'NRI']
+  },
+
+  // Academic Tracking fields
+  currentSemester: {
+    type: Number,
+    required: true,
+    default: 1
+  },
+  backlogs: {
+    type: [String],
+    default: []
+  },
+  registeredSubjects: {
+    type: [String],
+    default: []
   },
 
   // Fee Tracking

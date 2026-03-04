@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -38,6 +38,10 @@ const BECChatApp = dynamic(() => import('@/components/os/components/apps/BECChat
 const BECPortalApp = dynamic(() => import('@/components/os/components/apps/BECPortal').then(module => module.BECPortal), { ssr: false });
 const AccountManagerApp = dynamic(() => import('@/components/os/components/apps/AccountManager').then(module => module.AccountManager), { ssr: false });
 const AdmitApp = dynamic(() => import('@/components/os/components/apps/AdmitApp').then(module => module.AdmitApp), { ssr: false });
+const SubjectDirectoryApp = dynamic(() => import('@/components/os/components/apps/SubjectDirectoryApp'), { ssr: false });
+const SubjectAssignerApp = dynamic(() => import('@/components/os/components/apps/SubjectAssignerApp'), { ssr: false });
+const ReRegistrationReviewApp = dynamic(() => import('@/components/os/components/apps/ReRegistrationReviewApp'), { ssr: false });
+const CourseRegistrationApp = dynamic(() => import('@/components/os/components/apps/CourseRegistrationApp'), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -337,6 +341,66 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         size: 45,
         ramUsage: 120,
         allowedRoles: ['OFFICER'],
+    },
+    'subject-directory': {
+        id: 'subject-directory',
+        name: 'Subject Directory',
+        description: 'Define syllabus subjects',
+        icon: Book,
+        iconColor: 'from-sky-500 to-blue-600',
+        iconSolid: '#0ea5e9',
+        category: 'admin',
+        isCore: true,
+        component: SubjectDirectoryApp,
+        dockOrder: 3,
+        size: 20,
+        ramUsage: 80,
+        allowedRoles: ['OFFICER'],
+    },
+    'subject-assigner': {
+        id: 'subject-assigner',
+        name: 'Subject Assigner',
+        description: 'Bulk apply subjects to students',
+        icon: Users,
+        iconColor: 'from-emerald-500 to-emerald-600',
+        iconSolid: '#10b981',
+        category: 'admin',
+        isCore: true,
+        component: SubjectAssignerApp,
+        dockOrder: 4,
+        size: 30,
+        ramUsage: 100,
+        allowedRoles: ['OFFICER'],
+    },
+    're-registration': {
+        id: 're-registration',
+        name: 'Re-Registration',
+        description: 'Review manual backlog requests',
+        icon: FileSignature,
+        iconColor: 'from-purple-500 to-purple-600',
+        iconSolid: '#8b5cf6',
+        category: 'admin',
+        isCore: true,
+        component: ReRegistrationReviewApp,
+        dockOrder: 5,
+        size: 40,
+        ramUsage: 150,
+        allowedRoles: ['OFFICER'],
+    },
+    'course-registration': {
+        id: 'course-registration',
+        name: 'Course Registration',
+        description: 'Register for semester subjects & backlogs',
+        icon: BookOpen,
+        iconColor: 'from-indigo-500 to-indigo-600',
+        iconSolid: '#6366f1',
+        category: 'productivity',
+        isCore: true,
+        component: CourseRegistrationApp,
+        dockOrder: 5,
+        size: 45,
+        ramUsage: 150,
+        allowedRoles: ['STUDENT'],
     },
 };
 

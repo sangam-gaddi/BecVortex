@@ -88,11 +88,11 @@ const LoginCard = ({ cardId, number, role, roleKey, color, textColor, delay, ide
         sessionStorage.setItem('bec-vortex-role', data.userType === 'staff' ? data.user?.role : 'STUDENT');
         sessionStorage.setItem('bec-vortex-department', data.userType === 'staff' ? (data.user?.department || '') : '');
         sessionStorage.setItem('bec-vortex-userType', data.userType);
-        sessionStorage.setItem('bec-vortex-fullName', data.userType === 'staff' ? data.user?.fullName : data.student?.studentName || '');
-        sessionStorage.setItem('bec-vortex-username', data.userType === 'staff' ? data.user?.username : data.student?.usn || '');
+        sessionStorage.setItem('bec-vortex-fullName', data.userType === 'staff' ? data.user?.fullName : data.user?.name || '');
+        sessionStorage.setItem('bec-vortex-username', data.userType === 'staff' ? data.user?.username : data.user?.usn || '');
       }
 
-      toast.success(`Welcome, ${data.userType === 'staff' ? data.user?.fullName : data.student?.studentName}!`, { id: `login-${roleKey}` });
+      toast.success(`Welcome, ${data.userType === 'staff' ? data.user?.fullName : data.user?.name}!`, { id: `login-${roleKey}` });
 
       // Redirect to OS
       setTimeout(() => {
