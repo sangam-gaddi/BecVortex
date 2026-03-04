@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { verifySession } from '@/lib/auth/session';
 import { connectToDatabase } from '@/database/mongoose';
 import Student from '@/database/models/Student';
+import User from '@/database/models/User';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,15 +13,33 @@ export async function GET(req: NextRequest) {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session');
 
-    let sessionUsn = null;
+    let session = null;
     if (sessionCookie) {
-      const session = await verifySession(sessionCookie.value);
-      if (session) {
-        sessionUsn = session.usn;
-      }
+      session = await verifySession(sessionCookie.value);
     }
 
-    const finalUsn = sessionUsn || fallbackUsn;
+    await connectToDatabase();
+
+    // ── Staff user ──
+    if (session?.userType === 'staff') {
+      const user = await User.findById(session.userId).lean();
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      return NextResponse.json({
+        userType: 'staff',
+        user: {
+          username: user.username,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          department: user.department,
+        },
+      });
+    }
+
+    // ── Student user ──
+    const finalUsn = session?.usn || fallbackUsn;
 
     if (!finalUsn) {
       return NextResponse.json(
@@ -28,8 +47,6 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
-
-    await connectToDatabase();
 
     const student = await Student.findOne({ usn: finalUsn }).lean();
 
@@ -41,6 +58,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
+      userType: 'student',
       student: {
         usn: student.usn,
         studentName: student.studentName,

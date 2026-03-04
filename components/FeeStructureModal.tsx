@@ -194,7 +194,7 @@ const FeeStructureModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
           <div className="fee-table">
             <h2 className="text-xl uppercase text-white font-bold mb-4 bg-violet-400/30 p-3 rounded-lg" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif', letterSpacing: '0.05em' }}>IV. Hostel Fees (Annual)</h2>
-            <div className="border-2 border-white/20 rounded-lg overflow-hidden bg-black/50">
+            <div className="border-2 border-white/20 rounded-lg overflow-hidden overflow-x-auto bg-black/50">
               <table className="w-full">
                 <thead className="bg-violet-300/20">
                   <tr>

@@ -16,7 +16,7 @@ export default function HomePage() {
     const [showFeeStructure, setShowFeeStructure] = useState(false);
 
     return (
-        <main className="relative min-h-screen w-screen overflow-x-hidden">
+        <main className="relative min-h-screen w-full overflow-x-hidden">
             <Navbar onFeeStructureClick={() => setShowFeeStructure(true)} />
             <Hero />
             <About />

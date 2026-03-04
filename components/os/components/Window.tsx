@@ -129,7 +129,7 @@ function WindowComponent({
     // Observer for Dock Size Changes
     let dockObserver: ResizeObserver | null = null;
     const dock = document.getElementById('dock-main');
-    
+
     if (dock) {
       dockObserver = new ResizeObserver(() => {
         updateDockPosition();
@@ -237,8 +237,8 @@ function WindowComponent({
           position: position,
         });
       }}
-      minWidth={window.isMinimized ? 0 : 300}
-      minHeight={window.isMinimized ? 0 : 200}
+      minWidth={window.isMinimized ? 0 : 0}
+      minHeight={window.isMinimized ? 0 : 0}
       dragHandleClassName="window-title-bar"
       disableDragging={window.isMaximized || window.isMinimized}
       enableResizing={!window.isMaximized && !window.isMinimized}
@@ -274,9 +274,9 @@ function WindowComponent({
           !disableShadows && isFocused && gpuEnabled && "shadow-2xl", // Optimization: GPU check
           !isFocused && !window.isMinimized && "brightness-75 saturate-50",
           isDragging &&
-            !disableShadows &&
-            gpuEnabled &&
-            "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]",
+          !disableShadows &&
+          gpuEnabled &&
+          "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]",
         )}
         style={{
           borderColor:
@@ -286,7 +286,7 @@ function WindowComponent({
                 : `${accentColor}80`
               : undefined,
           // Optimization: Solid dark background for unfocused windows (saves GPU)
-          background: !isFocused ? "#171717" : undefined, 
+          background: !isFocused ? "#171717" : undefined,
           opacity: window.isMinimized ? 0 : 1,
           transform: getTransform(),
           // Optimization: Only apply expensive blur to the FOCUSED window AND if GPU is enabled
@@ -346,15 +346,12 @@ function WindowComponent({
                 <ContextMenuTrigger asChild>
                   <div className="h-full w-full">
                     {React.isValidElement(window.content) ? (
-                      React.cloneElement(
-                        window.content as React.ReactElement<any>,
-                        // eslint-disable-next-line
-                        {
-                          id: window.id,
-                          // Use handleClose which is the useCallback wrapper
-                          onClose: (e?: any) => handleClose(e),
-                        },
-                      )
+                      React.cloneElement(window.content as React.ReactElement<any>, {
+                        id: window.id,
+                        onClose: (e?: any) => handleClose(e),
+                        userRole: typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-role') : undefined,
+                        userDepartment: typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-department') : undefined,
+                      })
                     ) : (
                       window.content
                     )}
@@ -370,13 +367,12 @@ function WindowComponent({
                 </ContextMenuContent>
               </ContextMenu>
             ) : React.isValidElement(window.content) ? (
-              React.cloneElement(window.content as React.ReactElement<any>, 
-                // eslint-disable-next-line
-                {
-                  id: window.id,
-                  onClose: (e?: any) => handleClose(e),
-                }
-              )
+              React.cloneElement(window.content as React.ReactElement<any>, {
+                id: window.id,
+                onClose: (e?: any) => handleClose(e),
+                userRole: typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-role') : undefined,
+                userDepartment: typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-department') : undefined,
+              })
             ) : (
               window.content
             )}

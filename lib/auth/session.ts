@@ -5,22 +5,37 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
 );
 
-interface SessionData {
+export interface SessionData {
   userId: string;
   usn: string;
+  role?: string;        // MASTER | PRINCIPAL | HOD | OFFICER | FACULTY | STUDENT
+  department?: string;  // Department code (nullable for MASTER/PRINCIPAL/STUDENT)
+  userType: 'staff' | 'student';
   iat: number;
   exp: number;
 }
 
-export async function createSession(userId: string, usn: string) {
-  const token = await new SignJWT({ userId, usn })
+export async function createSession(
+  userId: string,
+  usn: string,
+  options?: { role?: string; department?: string; userType?: 'staff' | 'student' }
+) {
+  const payload: Record<string, any> = {
+    userId,
+    usn,
+    userType: options?.userType || 'student',
+  };
+  if (options?.role) payload.role = options.role;
+  if (options?.department) payload.department = options.department;
+
+  const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
     .sign(JWT_SECRET);
 
   const cookieStore = await cookies();
-  
+
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -35,7 +50,7 @@ export async function createSession(userId: string, usn: string) {
 export async function verifySession(token: string): Promise<SessionData | null> {
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
-    return verified.payload as SessionData;
+    return verified.payload as unknown as SessionData;
   } catch (error) {
     console.error('Session verification failed:', error);
     return null;

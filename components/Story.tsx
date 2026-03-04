@@ -77,7 +77,7 @@ const NotificationScroll = () => {
 
 const Story = ({ onFeeStructureClick }: { onFeeStructureClick?: () => void }) => {
   return (
-    <div id="story" className="min-h-dvh w-screen bg-black text-blue-50 py-20">
+    <div id="story" className="min-h-dvh w-full bg-black text-blue-50 py-20">
       <div className="container mx-auto px-6 md:px-10">
         <div className="text-center mb-16">
           <p className="font-general text-sm uppercase md:text-[10px] mb-5">Live Payment Updates</p>

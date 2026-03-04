@@ -72,8 +72,7 @@ export function GameRoot({ children }: GameRootProps) {
     };
 
     const handleContinue = () => {
-        // Force lock so that even if a user is remembered, we show the Login Screen
-        setIsLocked(true);
+        // Do not force lock anymore, rely on the seamless auto-login
         setGameState('BOOT');
     };
 
@@ -82,7 +81,6 @@ export function GameRoot({ children }: GameRootProps) {
     };
 
     const handleOnboardingComplete = () => {
-        setIsLocked(true);
         setGameState('GAMEPLAY');
     };
 

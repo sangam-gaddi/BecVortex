@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/all';
 import AnimatedTitle from './AnimatedTitle';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -13,14 +14,19 @@ interface LoginCardProps {
   cardId: string;
   number: string;
   role: string;
+  roleKey: string;
   color: string;
   textColor: string;
   delay: number;
+  identifierLabel: string;
+  identifierPlaceholder: string;
 }
 
-const LoginCard = ({ cardId, number, role, color, textColor, delay }: LoginCardProps) => {
+const LoginCard = ({ cardId, number, role, roleKey, color, textColor, delay, identifierLabel, identifierPlaceholder }: LoginCardProps) => {
   const innerRef = useRef<HTMLDivElement>(null);
   const isFlipped = useRef(false);
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const flipIn = () => {
     gsap.to(innerRef.current, {
@@ -32,6 +38,7 @@ const LoginCard = ({ cardId, number, role, color, textColor, delay }: LoginCardP
   };
 
   const flipOut = () => {
+    if (isSubmitting) return; // Don't flip out while submitting
     gsap.to(innerRef.current, {
       rotationY: 0,
       duration: 0.55,
@@ -41,8 +48,61 @@ const LoginCard = ({ cardId, number, role, color, textColor, delay }: LoginCardP
   };
 
   const toggle = () => {
+    if (isSubmitting) return;
     if (isFlipped.current) flipOut();
     else flipIn();
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const identifier = formData.get('identifier') as string;
+    const password = formData.get('password') as string;
+
+    if (!identifier || !password) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    toast.loading(`Authenticating as ${role}...`, { id: `login-${roleKey}` });
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Invalid credentials', { id: `login-${roleKey}` });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Store role info for the OS to use
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('bec-vortex-role', data.userType === 'staff' ? data.user?.role : 'STUDENT');
+        sessionStorage.setItem('bec-vortex-department', data.userType === 'staff' ? (data.user?.department || '') : '');
+        sessionStorage.setItem('bec-vortex-userType', data.userType);
+        sessionStorage.setItem('bec-vortex-fullName', data.userType === 'staff' ? data.user?.fullName : data.student?.studentName || '');
+        sessionStorage.setItem('bec-vortex-username', data.userType === 'staff' ? data.user?.username : data.student?.usn || '');
+      }
+
+      toast.success(`Welcome, ${data.userType === 'staff' ? data.user?.fullName : data.student?.studentName}!`, { id: `login-${roleKey}` });
+
+      // Redirect to OS
+      setTimeout(() => {
+        router.push('/os');
+      }, 800);
+
+    } catch (err) {
+      toast.error('Network error. Please try again.', { id: `login-${roleKey}` });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,43 +160,46 @@ const LoginCard = ({ cardId, number, role, color, textColor, delay }: LoginCardP
                 {role} Login
               </div>
 
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                toast.loading(`Authenticating as ${role}...`, { id: `login-${role}` });
-                setTimeout(() => {
-                  toast.success(`Welcome back, ${role}! Check OS for access.`, { id: `login-${role}` });
-                }, 1500);
-              }}>
+              <form onSubmit={handleLogin} onClick={(e) => e.stopPropagation()}>
                 <div className="bec-form-field">
-                  <label className="bec-form-label">Username / USN</label>
+                  <label className="bec-form-label">{identifierLabel}</label>
                   <input
+                    name="identifier"
                     type="text"
                     required
                     className="bec-form-input"
-                    placeholder={
-                      role === 'Principal' ? 'principal@becbgk.edu' :
-                        role === 'Faculty' ? 'faculty@becbgk.edu' :
-                          role === 'Officer' ? 'officer.id' : 'USN123456'
-                    }
+                    placeholder={identifierPlaceholder}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseEnter={(e) => e.stopPropagation()}
                   />
                 </div>
 
                 <div className="bec-form-field">
                   <label className="bec-form-label">Password</label>
-                  <input type="password" required className="bec-form-input" placeholder="••••••••" />
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    className="bec-form-input"
+                    placeholder="••••••••"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseEnter={(e) => e.stopPropagation()}
+                  />
                 </div>
 
                 <button
                   type="submit"
+                  disabled={isSubmitting}
                   className="bec-form-submit"
-                  style={{ backgroundColor: color, color: textColor }}
+                  style={{ backgroundColor: color, color: textColor, opacity: isSubmitting ? 0.6 : 1 }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  Login → {role}
+                  {isSubmitting ? 'Logging in...' : `Login → ${role}`}
                 </button>
               </form>
 
               <div className="bec-form-forgot">
-                <a href="#">Forgot password?</a>
+                <a href="#" onClick={(e) => e.stopPropagation()}>Forgot password?</a>
               </div>
             </div>
 
@@ -172,10 +235,12 @@ const About = () => {
   });
 
   const cards: LoginCardProps[] = [
-    { cardId: 'card-principal', number: '01', role: 'Principal', color: '#b1c1ef', textColor: '#0a0a0a', delay: 0 },
-    { cardId: 'card-faculty', number: '02', role: 'Faculty', color: '#f2acac', textColor: '#0a0a0a', delay: 0.05 },
-    { cardId: 'card-officer', number: '03', role: 'Officer', color: '#ffdd94', textColor: '#0a0a0a', delay: 0.1 },
-    { cardId: 'card-student', number: '04', role: 'Student', color: '#a8e6cf', textColor: '#0a0a0a', delay: 0.15 },
+    { cardId: 'card-master', number: '01', role: 'Master', roleKey: 'MASTER', color: '#e8b4b8', textColor: '#0a0a0a', delay: 0, identifierLabel: 'Username', identifierPlaceholder: 'becvortex' },
+    { cardId: 'card-principal', number: '02', role: 'Principal', roleKey: 'PRINCIPAL', color: '#b1c1ef', textColor: '#0a0a0a', delay: 0.05, identifierLabel: 'Username', identifierPlaceholder: 'principal' },
+    { cardId: 'card-hod', number: '03', role: 'HOD', roleKey: 'HOD', color: '#c4b5e0', textColor: '#0a0a0a', delay: 0.1, identifierLabel: 'Username', identifierPlaceholder: 'hod.cs' },
+    { cardId: 'card-faculty', number: '04', role: 'Faculty', roleKey: 'FACULTY', color: '#f2acac', textColor: '#0a0a0a', delay: 0.15, identifierLabel: 'Username', identifierPlaceholder: 'faculty@becbgk.edu' },
+    { cardId: 'card-officer', number: '05', role: 'Officer', roleKey: 'OFFICER', color: '#ffdd94', textColor: '#0a0a0a', delay: 0.2, identifierLabel: 'Username', identifierPlaceholder: 'officer.id' },
+    { cardId: 'card-student', number: '06', role: 'Student', roleKey: 'STUDENT', color: '#a8e6cf', textColor: '#0a0a0a', delay: 0.25, identifierLabel: 'USN / Email', identifierPlaceholder: 'USN123456' },
   ];
 
   return (
@@ -189,7 +254,7 @@ const About = () => {
         />
       </div>
 
-      {/* 4-panel card row */}
+      {/* 6-panel card row */}
       <div className="bec-panels-row">
         {cards.map(card => (
           <LoginCard key={card.cardId} {...card} />

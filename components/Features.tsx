@@ -53,27 +53,27 @@ const Features = () => (
         </p>
       </div>
 
-      <BentoTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
+      <BentoTilt className="border-hsla relative mb-7 h-auto md:h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
         <BentoCard src="/videos/feature-1.mp4" title={<>seaml<b>e</b>ss</>} description="One-click fee payments with real-time processing." />
       </BentoTilt>
 
-      <div className="grid h-[135vh] w-full grid-cols-2 grid-rows-3 gap-7">
-        <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2">
+      <div className="grid h-auto md:h-[135vh] w-full grid-cols-1 md:grid-cols-2 grid-rows-[auto] md:grid-rows-3 gap-7">
+        <BentoTilt className="bento-tilt_1 row-span-1 md:col-span-1 md:row-span-2 h-64 md:h-auto">
           <BentoCard src="/videos/feature-2.mp4" title={<>sec<b>u</b>re</>} description="Bank-level encryption ensures your data is protected." />
         </BentoTilt>
-        <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:col-span-1 md:ms-0">
+        <BentoTilt className="bento-tilt_1 row-span-1 ms-0 md:col-span-1 md:ms-32 h-64 md:h-auto">
           <BentoCard src="/videos/feature-3.mp4" title={<>tr<b>a</b>ck</>} description="Real-time payment tracking and notifications." />
         </BentoTilt>
-        <BentoTilt className="bento-tilt_1 me-14 md:col-span-1 md:me-0">
+        <BentoTilt className="bento-tilt_1 me-0 md:col-span-1 md:me-14 h-64 md:h-auto">
           <BentoCard src="/videos/feature-4.mp4" title={<>ef<b>f</b>icient</>} description="Lightning-fast processing with automated calculations." />
         </BentoTilt>
-        <BentoTilt className="bento-tilt_2">
+        <BentoTilt className="bento-tilt_2 h-64 md:h-auto">
           <div className="flex size-full flex-col justify-between bg-violet-300 p-5">
             <h1 className="bento-title special-font max-w-64 text-black">M<b>o</b>re featur<b>e</b>s co<b>m</b>ing so<b>o</b>n.</h1>
             <TiLocationArrow className="m-5 scale-[5] self-end" />
           </div>
         </BentoTilt>
-        <BentoTilt className="bento-tilt_2">
+        <BentoTilt className="bento-tilt_2 h-64 md:h-auto">
           <video src="/videos/feature-5.mp4" loop muted autoPlay className="size-full object-cover object-center" />
         </BentoTilt>
       </div>

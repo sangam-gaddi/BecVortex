@@ -107,9 +107,9 @@ const Hero = () => {
     index === 1 ? `/videos/collge.mp4` : `/videos/hero-${index}.mp4`;
 
   return (
-    <div className="relative h-dvh w-screen overflow-x-hidden">
+    <div className="relative h-dvh w-full overflow-x-hidden">
       {loading && (
-        <div className="flex-center absolute z-[100] h-dvh w-screen overflow-hidden bg-violet-50">
+        <div className="flex-center absolute z-[100] h-dvh w-full overflow-hidden bg-violet-50">
           <div className="three-body">
             <div className="three-body__dot"></div>
             <div className="three-body__dot"></div>
@@ -118,7 +118,7 @@ const Hero = () => {
         </div>
       )}
 
-      <div id="video-frame" className="relative z-10 h-dvh w-screen overflow-hidden rounded-lg bg-blue-75">
+      <div id="video-frame" className="relative z-10 h-dvh w-full overflow-hidden rounded-lg bg-blue-75">
         <div>
           <div className="mask-clip-path absolute-center absolute z-50 size-64 cursor-pointer overflow-hidden rounded-lg">
             <VideoPreview>

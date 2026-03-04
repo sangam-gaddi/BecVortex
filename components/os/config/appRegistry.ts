@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -36,6 +36,7 @@ const MailApp = dynamic(() => import('@/components/os/components/apps/Mail').the
 const BECPayApp = dynamic(() => import('@/components/os/components/apps/BECPay').then(module => module.BECPay), { ssr: false });
 const BECChatApp = dynamic(() => import('@/components/os/components/apps/BECChat').then(module => module.BECChat), { ssr: false });
 const BECPortalApp = dynamic(() => import('@/components/os/components/apps/BECPortal').then(module => module.BECPortal), { ssr: false });
+const AccountManagerApp = dynamic(() => import('@/components/os/components/apps/AccountManager').then(module => module.AccountManager), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -46,7 +47,7 @@ export interface AppMetadata {
     icon: LucideIcon;
     iconColor: string;           // Gradient class for dock
     iconSolid: string;           // Solid color fallback
-    category: 'productivity' | 'media' | 'utilities' | 'development' | 'system';
+    category: 'productivity' | 'media' | 'utilities' | 'development' | 'system' | 'admin';
     isCore: boolean;             // Cannot be uninstalled
     component: ComponentType<any>;
     dockOrder?: number;          // Order in dock (lower = earlier)
@@ -54,6 +55,7 @@ export interface AppMetadata {
     contextMenu?: ContextMenuConfig; // Context menu configuration
     size?: number;               // Size in MB (approximate/simulated)
     ramUsage?: number;           // Base RAM usage in MB (gamified)
+    allowedRoles?: string[];     // RBAC: only these roles can see/use this app. undefined = all roles.
 }
 
 // Centralized App Registry
@@ -255,6 +257,7 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         menu: devCenterMenuConfig,
         size: 550,
         ramUsage: 1000,
+        allowedRoles: ['MASTER'],
     },
 
     // ── BEC BillDesk Apps ──
@@ -271,6 +274,7 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         dockOrder: 3,
         size: 60,
         ramUsage: 200,
+        allowedRoles: ['STUDENT'],
     },
     'bec-chat': {
         id: 'bec-chat',
@@ -285,6 +289,7 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         dockOrder: 4,
         size: 45,
         ramUsage: 200,
+        allowedRoles: ['STUDENT', 'FACULTY'],
     },
     'bec-portal': {
         id: 'bec-portal',
@@ -299,34 +304,61 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         dockOrder: 2,
         size: 50,
         ramUsage: 150,
+        allowedRoles: ['STUDENT'],
+    },
+
+    // ── Admin Apps ──
+    'account-manager': {
+        id: 'account-manager',
+        name: 'Account Manager',
+        description: 'Create and manage staff accounts',
+        icon: UserPlus,
+        iconColor: 'from-blue-500 to-purple-600',
+        iconSolid: '#6366f1',
+        category: 'admin',
+        isCore: true,
+        component: AccountManagerApp,
+        dockOrder: 1,
+        size: 30,
+        ramUsage: 100,
+        allowedRoles: ['MASTER', 'PRINCIPAL', 'HOD'],
     },
 };
+
+// ── Role Filtering Helper ──
+function filterByRole(apps: AppMetadata[], role?: string): AppMetadata[] {
+    if (!role) return apps; // No role = show all (backward compat)
+    return apps.filter(app => {
+        if (!app.allowedRoles) return true; // No restriction = available to all
+        return app.allowedRoles.includes(role);
+    });
+}
 
 // Helper functions
 export function getApp(appId: string): AppMetadata | undefined {
     return APP_REGISTRY[appId];
 }
 
-export function getAllApps(): AppMetadata[] {
-    return Object.values(APP_REGISTRY);
+export function getAllApps(role?: string): AppMetadata[] {
+    return filterByRole(Object.values(APP_REGISTRY), role);
 }
 
-export function getCoreApps(): AppMetadata[] {
-    return getAllApps().filter(app => app.isCore);
+export function getCoreApps(role?: string): AppMetadata[] {
+    return getAllApps(role).filter(app => app.isCore);
 }
 
-export function getOptionalApps(): AppMetadata[] {
-    return getAllApps().filter(app => !app.isCore);
+export function getOptionalApps(role?: string): AppMetadata[] {
+    return getAllApps(role).filter(app => !app.isCore);
 }
 
-export function getDockApps(installedAppIds: Set<string>): AppMetadata[] {
-    return getAllApps()
+export function getDockApps(installedAppIds: Set<string>, role?: string): AppMetadata[] {
+    return getAllApps(role)
         .filter(app => app.isCore || installedAppIds.has(app.id))
         .filter(app => app.dockOrder !== undefined)
         .sort((a, b) => (a.dockOrder || 999) - (b.dockOrder || 999));
 }
 
-export function getAppsByCategory(category: AppMetadata['category']): AppMetadata[] {
-    return getAllApps().filter(app => app.category === category);
+export function getAppsByCategory(category: AppMetadata['category'], role?: string): AppMetadata[] {
+    return getAllApps(role).filter(app => app.category === category);
 }
 
