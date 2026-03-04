@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -42,6 +42,8 @@ const SubjectDirectoryApp = dynamic(() => import('@/components/os/components/app
 const SubjectAssignerApp = dynamic(() => import('@/components/os/components/apps/SubjectAssignerApp'), { ssr: false });
 const ReRegistrationReviewApp = dynamic(() => import('@/components/os/components/apps/ReRegistrationReviewApp'), { ssr: false });
 const CourseRegistrationApp = dynamic(() => import('@/components/os/components/apps/CourseRegistrationApp'), { ssr: false });
+const TeachingAssignerApp = dynamic(() => import('@/components/os/components/apps/TeachingAssignerApp'), { ssr: false });
+const MyClassesApp = dynamic(() => import('@/components/os/components/apps/MyClassesApp'), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -401,6 +403,38 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         size: 45,
         ramUsage: 150,
         allowedRoles: ['STUDENT'],
+    },
+
+    // ── Faculty Management Apps ──
+    'teaching-assigner': {
+        id: 'teaching-assigner',
+        name: 'Teaching Assigner',
+        description: 'Assign subjects to faculty members',
+        icon: ClipboardList,
+        iconColor: 'from-violet-500 to-indigo-600',
+        iconSolid: '#7c3aed',
+        category: 'admin',
+        isCore: true,
+        component: TeachingAssignerApp,
+        dockOrder: 6,
+        size: 30,
+        ramUsage: 100,
+        allowedRoles: ['HOD'],
+    },
+    'my-classes': {
+        id: 'my-classes',
+        name: 'My Classes',
+        description: 'View your assigned teaching subjects',
+        icon: LayoutGrid,
+        iconColor: 'from-indigo-500 to-blue-600',
+        iconSolid: '#4f46e5',
+        category: 'productivity',
+        isCore: true,
+        component: MyClassesApp,
+        dockOrder: 3,
+        size: 25,
+        ramUsage: 80,
+        allowedRoles: ['FACULTY'],
     },
 };
 

@@ -26,12 +26,114 @@ import { renderContextMenuItems } from '@/components/os/components/ui/context-me
 // import { checkPermissions } from '@/components/os/utils/fileSystemUtils';
 import { FolderOpen, Trash2, Clipboard, Image as ImageIcon, Scissors, Copy, Info } from 'lucide-react';
 import { notify } from '@/components/os/services/notifications';
+import { getAllApps, type AppMetadata } from '@/components/os/config/appRegistry';
+import { AppIcon } from '@/components/os/components/ui/AppIcon';
+
 const WALLPAPERS: Record<string, string> = {
   default: '/os-assets/images/wallpaper-nebula.avif',
   city: '/os-assets/images/wallpaper-city.avif',
   aurora: '/os-assets/images/wallpaper-aurora.avif',
   lake: '/os-assets/images/wallpaper-lake.avif',
 };
+
+const ROLE_LABELS: Record<string, string> = {
+  MASTER: '🛡️ Master Admin Apps',
+  PRINCIPAL: '🏛️ Principal Apps',
+  HOD: '📋 HOD Apps',
+  OFFICER: '⚙️ Officer Apps',
+  FACULTY: '👨‍🏫 Faculty Apps',
+  STUDENT: '🎓 Student Apps',
+};
+
+// BEC-specific app IDs (non-generic OS apps)
+const BEC_APP_IDS = new Set([
+  'bec-pay', 'bec-chat', 'bec-portal',
+  'account-manager', 'admit-app',
+  'subject-directory', 'subject-assigner', 're-registration',
+  'course-registration',
+  'teaching-assigner', 'my-classes',
+]);
+
+// Map of role -> which BEC app IDs belong to that role
+const ROLE_APP_MAP: { role: string; label: string; color: string; apps: string[] }[] = [
+  { role: 'HOD', label: '📋 HOD', color: 'text-violet-400', apps: ['account-manager', 'teaching-assigner'] },
+  { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration'] },
+  { role: 'FACULTY', label: '👨‍🏫 Faculty', color: 'text-emerald-400', apps: ['my-classes'] },
+  { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration'] },
+];
+
+function DesktopAppShortcuts({ onOpenApp }: { onOpenApp: (type: string, data?: any) => void }) {
+  // Get ALL apps (no role filter) so every group is visible
+  const allApps = getAllApps();
+  const appMap = new Map(allApps.map(a => [a.id, a]));
+
+  return (
+    <div
+      className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 z-10 w-[280px] max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="bg-black/40 backdrop-blur-xl border-r border-white/10 rounded-r-2xl p-4 shadow-2xl space-y-3">
+        <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-widest px-1">
+          BEC Vortex Apps
+        </h3>
+
+        {ROLE_APP_MAP.map(group => {
+          const groupApps = group.apps.map(id => appMap.get(id)).filter(Boolean) as AppMetadata[];
+          if (groupApps.length === 0) return null;
+
+          return (
+            <div key={group.role}>
+              <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-1 ${group.color}`}>
+                {group.label}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {groupApps.map(app => (
+                  <button
+                    key={app.id}
+                    onClick={() => onOpenApp(app.id)}
+                    className="flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl hover:bg-white/10 transition-all group"
+                    title={app.description}
+                  >
+                    <AppIcon app={app} size="md" className="w-9 h-9 shadow-lg group-hover:scale-110 transition-transform" showIcon />
+                    <span className="text-[9px] text-white/60 text-center leading-tight max-w-[60px] truncate group-hover:text-white transition-colors">
+                      {app.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Common apps available to all */}
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider mb-2 px-1 text-white/40">
+            🌐 Common
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['bec-pay', 'bec-chat'].map(id => {
+              const app = appMap.get(id);
+              if (!app) return null;
+              return (
+                <button
+                  key={app.id}
+                  onClick={() => onOpenApp(app.id)}
+                  className="flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl hover:bg-white/10 transition-all group"
+                  title={app.description}
+                >
+                  <AppIcon app={app} size="md" className="w-9 h-9 shadow-lg group-hover:scale-110 transition-transform" showIcon />
+                  <span className="text-[9px] text-white/60 text-center leading-tight max-w-[60px] truncate group-hover:text-white transition-colors">
+                    {app.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface DesktopProps {
   onDoubleClick: () => void;
@@ -396,6 +498,9 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
               </ContextMenuContent>
             </ContextMenu>
           ))}
+
+          {/* ── BEC Vortex App Shortcuts (Role-Grouped) ── */}
+          <DesktopAppShortcuts onOpenApp={onOpenApp} />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">

@@ -170,6 +170,40 @@ export default function OS() {
             return { content: <PlaceholderApp title={title} />, title };
         }
 
+        // ── RBAC Gate: check if user role is allowed ──
+        if (appConfig.allowedRoles && appConfig.allowedRoles.length > 0) {
+            const currentRole = typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-role') : null;
+            const currentUserType = typeof window !== 'undefined' ? sessionStorage.getItem('bec-vortex-userType') : null;
+            const effectiveRole = currentRole || (currentUserType === 'student' ? 'STUDENT' : null);
+
+            if (!effectiveRole || !appConfig.allowedRoles.includes(effectiveRole)) {
+                return {
+                    title: appConfig.name,
+                    content: (
+                        <div className="h-full flex items-center justify-center bg-[#0f111a] text-white">
+                            <div className="text-center max-w-sm px-6">
+                                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/15 border-2 border-red-500/30 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-xl font-bold text-red-400 mb-2">Access Denied</h2>
+                                <p className="text-sm text-white/50 mb-4">
+                                    <span className="text-white font-semibold">{appConfig.name}</span> requires{' '}
+                                    <span className="text-red-400 font-semibold">{appConfig.allowedRoles.join(' / ')}</span> role.
+                                </p>
+                                <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-xs text-white/40">
+                                    <span>Your role:</span>
+                                    <span className="font-bold text-white/70">{effectiveRole || 'Unknown'}</span>
+                                </div>
+                                <p className="text-xs text-white/30 mt-4">BEC Vortex enforces strict Role-Based Access Control.</p>
+                            </div>
+                        </div>
+                    ),
+                };
+            }
+        }
+
         const Component = appConfig.component;
         const title = appConfig.name;
 
@@ -196,7 +230,7 @@ export default function OS() {
 
         // Terminal Special Handler
         if (type === 'terminal') {
-            props.onLaunchApp = (id: string, args: any[], owner: string) => 
+            props.onLaunchApp = (id: string, args: any[], owner: string) =>
                 openWindowRef.current(id, { path: args?.[0], timestamp: Date.now() }, owner);
         }
 
@@ -366,61 +400,61 @@ export default function OS() {
 
     return (
         <AppNotificationsProvider onOpenApp={openWindow}>
-        <div className="dark h-screen w-screen overflow-hidden bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 relative">
-            <div className="window-drag-boundary absolute top-7 left-0 right-0 bottom-0 pointer-events-none z-0" />
-            <Desktop
-                onDoubleClick={() => { }}
-                icons={desktopIcons}
-                onUpdateIconsPositions={updateIconsPositions}
-                onIconDoubleClick={handleIconDoubleClick}
-                onOpenApp={openWindow}
-            />
+            <div className="dark h-screen w-screen overflow-hidden bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+                <div className="window-drag-boundary absolute top-7 left-0 right-0 bottom-0 pointer-events-none z-0" />
+                <Desktop
+                    onDoubleClick={() => { }}
+                    icons={desktopIcons}
+                    onUpdateIconsPositions={updateIconsPositions}
+                    onIconDoubleClick={handleIconDoubleClick}
+                    onOpenApp={openWindow}
+                />
 
-            <MenuBar
-                focusedApp={focusedAppType}
-                onOpenApp={openWindow}
-            />
+                <MenuBar
+                    focusedApp={focusedAppType}
+                    onOpenApp={openWindow}
+                />
 
-            <Dock
-                onOpenApp={openWindow}
-                onRestoreWindow={focusWindow}
-                onFocusWindow={focusWindow}
-                windows={windows}
-            />
+                <Dock
+                    onOpenApp={openWindow}
+                    onRestoreWindow={focusWindow}
+                    onFocusWindow={focusWindow}
+                    windows={windows}
+                />
 
-            <AnimatePresence>
-                {windows.map(window => {
-                    // Memoization Fix: We pass the Window object directly.
-                    // The 'content' property inside 'window' is stable from useWindowManager.
-                    // We DO NOT cloneElement here anymore, avoiding new object creation on every render.
-                    // This allows React.memo(Window) to actually prevent re-renders of unfocused windows.
-                    return (
-                    <motion.div
-                        key={window.id}
-                        initial={reduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
-                        animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
-                        exit={reduceMotion ? undefined : { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ zIndex: window.zIndex }}
-                    >
-                        <Window
-                            window={window} // Pass the stable state object directly
-                            onClose={() => closeWindow(window.id)}
-                            onMinimize={() => minimizeWindow(window.id)}
-                            onMaximize={() => maximizeWindow(window.id)}
-                            onFocus={() => focusWindow(window.id)}
-                            onUpdateState={(updates: any) => updateWindowState(window.id, updates)}
-                            isFocused={window.id === focusedWindowId}
-                            bounds=".window-drag-boundary"
-                        />
-                    </motion.div>
-                );
-                })}
-            </AnimatePresence>
+                <AnimatePresence>
+                    {windows.map(window => {
+                        // Memoization Fix: We pass the Window object directly.
+                        // The 'content' property inside 'window' is stable from useWindowManager.
+                        // We DO NOT cloneElement here anymore, avoiding new object creation on every render.
+                        // This allows React.memo(Window) to actually prevent re-renders of unfocused windows.
+                        return (
+                            <motion.div
+                                key={window.id}
+                                initial={reduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
+                                animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
+                                exit={reduceMotion ? undefined : { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute inset-0 pointer-events-none"
+                                style={{ zIndex: window.zIndex }}
+                            >
+                                <Window
+                                    window={window} // Pass the stable state object directly
+                                    onClose={() => closeWindow(window.id)}
+                                    onMinimize={() => minimizeWindow(window.id)}
+                                    onMaximize={() => maximizeWindow(window.id)}
+                                    onFocus={() => focusWindow(window.id)}
+                                    onUpdateState={(updates: any) => updateWindowState(window.id, updates)}
+                                    isFocused={window.id === focusedWindowId}
+                                    bounds=".window-drag-boundary"
+                                />
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
 
-            <Toaster />
-        </div>
+                <Toaster />
+            </div>
         </AppNotificationsProvider>
     );
 }

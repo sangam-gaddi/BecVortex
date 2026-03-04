@@ -2,6 +2,7 @@
 import { Trash, Trash2, Grid, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState, useEffect, useMemo, memo } from 'react';
+import { createPortal } from 'react-dom';
 import type { WindowState } from '@/components/os/hooks/useWindowManager';
 import { useThemeColors } from '@/components/os/hooks/useThemeColors';
 import { useAppContext } from '@/components/os/components/AppContext';
@@ -31,8 +32,9 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [shouldHide, setShouldHide] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [overflowOpen, setOverflowOpen] = useState(false);
 
-  // Get visible apps based on installed apps
+  // Get visible apps — show ALL apps to flex the platform (RBAC is enforced on open)
   const visibleApps = useMemo(() => {
     const apps = getDockApps(installedApps);
 
@@ -77,7 +79,7 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
     return map;
   }, [windows]);
 
-  // Memoize intersection calculation
+  // Memoize intersection calculation (bottom dock)
   const hasIntersection = useMemo(() => {
     const hasMaximizedWindow = windows.some(w => w.isMaximized && !w.isMinimized);
 
@@ -86,10 +88,10 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
     }
 
     const dockBounds = {
-      left: 16,
-      right: 80,
-      top: window.innerHeight / 2 - 300,
-      bottom: window.innerHeight / 2 + 300,
+      left: window.innerWidth / 2 - 400,
+      right: window.innerWidth / 2 + 400,
+      top: window.innerHeight - 80,
+      bottom: window.innerHeight,
     };
 
     return windows.some(w => {
@@ -120,6 +122,8 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
   // Handle dock icon click - macOS behavior
   // Hold Alt/Option to force open a new window
   const handleAppClick = (appId: string, e: React.MouseEvent) => {
+    // Close overflow popover immediately so it doesn't collide with new window
+    setOverflowOpen(false);
     const appWindows = windowsByApp[appId] || [];
 
     // Alt/Option key - always open new window
@@ -164,14 +168,14 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
     const appName = app.nameKey ? t(app.nameKey) : app.name;
 
     return (
-      <div key={app.id} className="flex flex-col items-center gap-2">
+      <div key={app.id} className="flex flex-col items-center gap-1">
         <motion.button
           aria-label={appName}
           className="relative group"
           onMouseEnter={() => !isOverflow && setHoveredIndex(index)}
           onMouseLeave={() => !isOverflow && setHoveredIndex(null)}
           onClick={(e) => handleAppClick(app.id, e)}
-          whileHover={reduceMotion ? { scale: 1, x: 0 } : (isOverflow ? { scale: 1.1, x: 0 } : { scale: 1.1, x: 8 })}
+          whileHover={reduceMotion ? { scale: 1 } : (isOverflow ? { scale: 1.1 } : { scale: 1.15, y: -6 })}
           whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
         >
           <AppIcon
@@ -208,9 +212,9 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
 
           {!isOverflow && hoveredIndex === index && (
             <motion.div
-              className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 z-50 top-1/2 -translate-y-1/2"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
+              className="absolute bottom-full mb-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 z-50 left-1/2 -translate-x-1/2"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
               {appName}
@@ -224,99 +228,108 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
   };
 
   return (
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 z-50 pointer-events-none sticky-dock-container">
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 sm:top-auto sm:translate-y-0 sm:bottom-3 sm:left-1/2 sm:-translate-x-1/2 z-50 pointer-events-none sticky-dock-container">
       <div className="pointer-events-auto">
         <motion.div
           id="dock-main"
           className={cn(
-            "rounded-2xl p-2 border border-white/20",
+            "rounded-2xl px-3 py-2 border border-white/20",
             !disableShadows && "shadow-2xl"
           )}
           style={{ background: dockBackground, ...blurStyle }}
-          initial={{ x: -100, opacity: 0 }}
+          initial={{ y: 100, opacity: 0 }}
           animate={{
-            x: shouldHide ? -80 : 0,
+            y: shouldHide ? 80 : 0,
             opacity: shouldHide ? 0 : 1
           }}
           transition={{ duration: 0.15, ease: "easeInOut" }}
         >
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
             {/* Primary User Apps */}
             {primaryUserApps.map((app, index) => renderAppIcon(app, index))}
 
             {/* Overflow Menu */}
             {overflowUserApps.length > 0 && (
-              <Popover onOpenChange={(open) => !open && setSearchQuery('')}>
-                <PopoverTrigger asChild>
-                  <motion.button
-                    className="relative group flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 border border-white/5"
-                    onMouseEnter={() => setHoveredIndex(MAX_VISIBLE_APPS)}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                    whileHover={reduceMotion ? { scale: 1, x: 0 } : { scale: 1.1, x: 8 }}
-                    whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
-                  >
-                    <Grid className="w-6 h-6 text-white" />
-                    {hoveredIndex === MAX_VISIBLE_APPS && (
-                      <motion.div
-                        className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 z-50 top-1/2 -translate-y-1/2"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        {t('appStore.categories.all')}
-                      </motion.div>
-                    )}
-                  </motion.button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="right"
-                  align="center"
-                  sideOffset={16}
-                  className={cn(
-                    "w-80 p-4 border-white/20 flex flex-col gap-4 text-white",
-                    !disableShadows ? 'shadow-2xl' : 'shadow-none'
-                  )}
-                  style={{
-                    background: getBackgroundColor(0.8),
-                    ...blurStyle,
-                  }}
+              <>
+                {/* Trigger Button */}
+                <motion.button
+                  className="relative group flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 border border-white/5"
+                  onMouseEnter={() => setHoveredIndex(MAX_VISIBLE_APPS)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={() => setOverflowOpen(!overflowOpen)}
+                  whileHover={reduceMotion ? { scale: 1 } : { scale: 1.1, y: -4 }}
+                  whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
                 >
-                  {/* Search Input */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
-                    <input
-                      type="text"
-                      placeholder={t('appStore.searchPlaceholder')}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white/10 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-white/40 focus:outline-hidden focus:ring-2 focus:ring-white/20"
-                      autoFocus
-                    />
-                  </div>
+                  <Grid className="w-6 h-6 text-white" />
+                  {hoveredIndex === MAX_VISIBLE_APPS && !overflowOpen && (
+                    <motion.div
+                      className="absolute bottom-full mb-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 z-50 left-1/2 -translate-x-1/2"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {t('appStore.categories.all')}
+                    </motion.div>
+                  )}
+                </motion.button>
 
-                  <div className="grid grid-cols-3 gap-4 max-h-[300px] overflow-y-auto scrollbar-hide p-2">
-                    {filteredOverflowApps.length > 0 ? (
-                      filteredOverflowApps.map((app, index) => renderAppIcon(app, index + MAX_VISIBLE_APPS, true))
-                    ) : (
-                      <div className="col-span-3 text-center text-white/50 text-sm py-4">
-                        {t('appStore.empty.title')}
+                {/* Fixed Centered Overlay — rendered via Portal to escape transform context */}
+                {overflowOpen && typeof document !== 'undefined' && createPortal(
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-[9998] bg-black/30"
+                      onClick={() => { setOverflowOpen(false); setSearchQuery(''); }}
+                    />
+                    {/* Panel */}
+                    <div
+                      className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[360px] rounded-2xl p-4 border border-white/20 flex flex-col gap-4 text-white"
+                      style={{
+                        background: getBackgroundColor(0.85),
+                        ...blurStyle,
+                        maxHeight: 'calc(100vh - 100px)',
+                        boxShadow: !disableShadows ? '0 25px 50px -12px rgba(0,0,0,0.5)' : 'none',
+                      }}
+                    >
+                      {/* Search Input */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+                        <input
+                          type="text"
+                          placeholder={t('appStore.searchPlaceholder')}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-white/10 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-white/40 focus:outline-hidden focus:ring-2 focus:ring-white/20"
+                          autoFocus
+                        />
                       </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+
+                      <div className="grid grid-cols-3 gap-4 max-h-[50vh] overflow-y-auto scrollbar-hide p-2">
+                        {filteredOverflowApps.length > 0 ? (
+                          filteredOverflowApps.map((app, index) => renderAppIcon(app, index + MAX_VISIBLE_APPS, true))
+                        ) : (
+                          <div className="col-span-3 text-center text-white/50 text-sm py-4">
+                            {t('appStore.empty.title')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>,
+                  document.body
+                )}
+              </>
             )}
 
             {/* Separator between User Apps and System Apps */}
             {(primaryUserApps.length > 0 || overflowUserApps.length > 0) && (
-              <div className="w-8 h-px bg-white/10 my-1 mx-auto" />
+              <div className="w-8 h-px sm:w-px sm:h-8 bg-white/10 sm:mx-1 my-1 sm:my-0 mx-auto sm:mx-1" />
             )}
 
             {/* Pinned System Apps (Terminal, Settings) */}
             {pinnedApps.map((app, index) => renderAppIcon(app, index + 100))}
 
             {/* Separator before Trash */}
-            <div className="w-8 h-px bg-white/10 my-1 mx-auto" />
+            <div className="w-8 h-px sm:w-px sm:h-8 bg-white/10 sm:mx-1 my-1 sm:my-0 mx-auto sm:mx-1" />
 
             {/* Trash Icon */}
             <motion.button
@@ -333,16 +346,16 @@ function DockComponent({ onOpenApp, onRestoreWindow, onFocusWindow, windows }: D
                 // Open Finder at .Trash
                 onOpenApp('finder', { path: `${homePath}/.Trash` });
               }}
-              whileHover={reduceMotion ? { scale: 1, x: 0 } : { scale: 1.1, x: 8 }}
+              whileHover={reduceMotion ? { scale: 1 } : { scale: 1.15, y: -6 }}
               whileTap={reduceMotion ? { scale: 1 } : { scale: 0.95 }}
             >
               {isTrashEmpty ? <Trash className="w-6 h-6" /> : <Trash2 className="w-6 h-6" />}
 
               {hoveredIndex === visibleApps.length + 1 && (
                 <motion.div
-                  className="absolute left-full ml-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 top-1/2 -translate-y-1/2"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  className="absolute bottom-full mb-3 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md text-white text-xs rounded-lg whitespace-nowrap border border-white/20 left-1/2 -translate-x-1/2"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                 >
                   {t('fileManager.places.trash')}

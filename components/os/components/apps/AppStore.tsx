@@ -66,7 +66,7 @@ export function AppStore({ owner, onOpenApp }: AppStoreProps) {
         { id: 'system', label: t('appStore.categories.system') },
     ];
 
-    // Filter apps based on search and category
+    // Show ALL apps to flex the platform (RBAC is enforced on app open)
     const filteredApps = useMemo(() => {
         let apps = selectedCategory === 'all'
             ? getAllApps()
