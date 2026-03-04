@@ -306,11 +306,23 @@ function MenuBarComponent({ focusedApp, onOpenApp }: MenuBarProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <MenubarItem onClick={() => {
-                    // Log Out -> Clear windows session
+                    // Log Out -> Clear windows session AND server session
                     if (currentUser) {
                       clearSession(currentUser);
                     }
                     logout();
+
+                    // Clear homepage server auth from sessionStorage
+                    if (typeof window !== 'undefined') {
+                      sessionStorage.removeItem('bec-vortex-role');
+                      sessionStorage.removeItem('bec-vortex-department');
+                      sessionStorage.removeItem('bec-vortex-userType');
+                      sessionStorage.removeItem('bec-vortex-fullName');
+                      sessionStorage.removeItem('bec-vortex-username');
+
+                      // Redirect to homepage
+                      window.location.href = '/';
+                    }
                   }}>
                     {t('menubar.system.logOutAs', { username: currentUser ? currentUser : t('menubar.system.user') })}
                   </MenubarItem>

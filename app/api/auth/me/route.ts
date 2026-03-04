@@ -26,6 +26,12 @@ export async function GET(req: NextRequest) {
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
+
+      // Verify active session ID to prevent multi-device login
+      if (user.activeSessionId && session.activeSessionId !== user.activeSessionId) {
+        return NextResponse.json({ error: 'Session invalidated by login from another device' }, { status: 401 });
+      }
+
       return NextResponse.json({
         userType: 'staff',
         user: {
@@ -55,6 +61,11 @@ export async function GET(req: NextRequest) {
         { error: 'Student not found' },
         { status: 404 }
       );
+    }
+
+    // Verify active session ID to prevent multi-device login (only if they have a session)
+    if (session && student.activeSessionId && session.activeSessionId !== student.activeSessionId) {
+      return NextResponse.json({ error: 'Session invalidated by login from another device' }, { status: 401 });
     }
 
     return NextResponse.json({

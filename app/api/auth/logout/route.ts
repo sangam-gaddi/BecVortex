@@ -2,13 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deleteSession, getSession } from '@/lib/auth/session';
 import { connectToDatabase } from '@/database/mongoose';
 import Student from '@/database/models/Student';
+import User from '@/database/models/User';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (session?.usn) {
+    const sessionCookie = req.cookies.get('session');
+    let session = null;
+
+    if (sessionCookie) {
+      session = await getSession();
+    }
+
+    if (session) {
       await connectToDatabase();
-      await Student.findOneAndUpdate({ usn: session.usn }, { $set: { isOnline: false } });
+
+      if (session.userType === 'staff' && session.userId) {
+        await User.findByIdAndUpdate(session.userId, {
+          $set: { activeSessionId: null }
+        });
+      } else if (session.userType === 'student' && session.usn) {
+        await Student.findOneAndUpdate(
+          { usn: session.usn },
+          { $set: { isOnline: false, activeSessionId: null } }
+        );
+      }
     }
 
     await deleteSession();

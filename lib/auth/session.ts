@@ -11,6 +11,7 @@ export interface SessionData {
   role?: string;        // MASTER | PRINCIPAL | HOD | OFFICER | FACULTY | STUDENT
   department?: string;  // Department code (nullable for MASTER/PRINCIPAL/STUDENT)
   userType: 'staff' | 'student';
+  activeSessionId?: string; // To track and prevent concurrent logins
   iat: number;
   exp: number;
 }
@@ -18,7 +19,7 @@ export interface SessionData {
 export async function createSession(
   userId: string,
   usn: string,
-  options?: { role?: string; department?: string; userType?: 'staff' | 'student' }
+  options?: { role?: string; department?: string; userType?: 'staff' | 'student'; activeSessionId?: string }
 ) {
   const payload: Record<string, any> = {
     userId,
@@ -27,6 +28,7 @@ export async function createSession(
   };
   if (options?.role) payload.role = options.role;
   if (options?.department) payload.department = options.department;
+  if (options?.activeSessionId) payload.activeSessionId = options.activeSessionId;
 
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })

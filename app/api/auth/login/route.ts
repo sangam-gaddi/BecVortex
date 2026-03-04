@@ -27,10 +27,16 @@ export async function POST(req: NextRequest) {
     if (staffUser && staffUser.password) {
       const isValid = await verifyPassword(password, staffUser.password);
       if (isValid) {
+        // Generate new session ID and save it
+        const sessionId = crypto.randomUUID();
+        staffUser.activeSessionId = sessionId;
+        await staffUser.save();
+
         await createSession(staffUser._id.toString(), staffUser.username, {
           role: staffUser.role,
           department: staffUser.department || undefined,
           userType: 'staff',
+          activeSessionId: sessionId,
         });
 
         return NextResponse.json({
@@ -65,29 +71,36 @@ export async function POST(req: NextRequest) {
 
     const isValid = await verifyPassword(password, student.password);
 
-    if (!isValid) {
+    if (isValid) {
+      // Generate new session ID and save it
+      const sessionId = crypto.randomUUID();
+      student.activeSessionId = sessionId;
+      await student.save();
+
+      const userIdentifier = student.usn || student.csn || student._id.toString();
+
+      await createSession(student._id.toString(), userIdentifier, {
+        role: 'STUDENT',
+        userType: 'student',
+        activeSessionId: sessionId,
+      });
+
+      return NextResponse.json({
+        success: true,
+        userType: 'student',
+        user: {
+          usn: student.usn || null,
+          csn: student.csn,
+          name: student.studentName,
+          email: student.email,
+        },
+      });
+    } else {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
-
-    // Create session with STUDENT role
-    await createSession(student._id.toString(), student.usn, {
-      role: 'STUDENT',
-      userType: 'student',
-    });
-
-    return NextResponse.json({
-      success: true,
-      userType: 'student',
-      student: {
-        usn: student.usn,
-        studentName: student.studentName,
-        email: student.email,
-      },
-    });
-
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

@@ -71,9 +71,9 @@ export function AccountManager({ owner, userRole, userDepartment }: AccountManag
             };
 
             // Department handling
-            if (userRole === 'HOD') {
+            if (activeRole === 'HOD') {
                 // HOD creates in their own department
-                payload.department = userDepartment;
+                payload.department = activeDept;
             } else if (needsDeptPicker && formData.department) {
                 payload.department = formData.department;
             }

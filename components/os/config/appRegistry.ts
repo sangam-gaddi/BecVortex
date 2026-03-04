@@ -37,6 +37,7 @@ const BECPayApp = dynamic(() => import('@/components/os/components/apps/BECPay')
 const BECChatApp = dynamic(() => import('@/components/os/components/apps/BECChat').then(module => module.BECChat), { ssr: false });
 const BECPortalApp = dynamic(() => import('@/components/os/components/apps/BECPortal').then(module => module.BECPortal), { ssr: false });
 const AccountManagerApp = dynamic(() => import('@/components/os/components/apps/AccountManager').then(module => module.AccountManager), { ssr: false });
+const AdmitApp = dynamic(() => import('@/components/os/components/apps/AdmitApp').then(module => module.AdmitApp), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -306,7 +307,6 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         ramUsage: 150,
         allowedRoles: ['STUDENT'],
     },
-
     // ── Admin Apps ──
     'account-manager': {
         id: 'account-manager',
@@ -322,6 +322,21 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         size: 30,
         ramUsage: 100,
         allowedRoles: ['MASTER', 'PRINCIPAL', 'HOD'],
+    },
+    'admit-app': {
+        id: 'admit-app',
+        name: 'Admit',
+        description: 'Student Onboarding and Admission System',
+        icon: GraduationCap,
+        iconColor: 'from-emerald-500 to-teal-600',
+        iconSolid: '#10b981',
+        category: 'admin',
+        isCore: true,
+        component: AdmitApp,
+        dockOrder: 2,
+        size: 45,
+        ramUsage: 120,
+        allowedRoles: ['OFFICER'],
     },
 };
 

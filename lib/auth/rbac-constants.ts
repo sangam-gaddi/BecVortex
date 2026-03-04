@@ -16,11 +16,21 @@ export const DEPARTMENTS = [
     'CS',
     'IS',
     'EC',
-    'AI_ML',
+    'AI',
     'EE',
-    'MECH_CIVIL',
+    'ME',
+    'CV',
+    'IP',
+    'BT',
+    'AU',
+    'UE'
 ] as const;
 export type Department = typeof DEPARTMENTS[number];
+
+// Academic Departments only (for student admissions)
+export const ACADEMIC_DEPARTMENTS: Department[] = [
+    'CS', 'IS', 'EC', 'AI', 'EE', 'ME', 'CV', 'IP', 'BT', 'AU', 'UE'
+];
 
 // Human-readable labels
 export const DEPARTMENT_LABELS: Record<Department, string> = {
@@ -31,9 +41,14 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
     CS: 'Computer Science',
     IS: 'Information Science',
     EC: 'Electronics & Communication',
-    AI_ML: 'AI & Machine Learning',
+    AI: 'AI & Machine Learning',
     EE: 'Electrical Engineering',
-    MECH_CIVIL: 'Mechanical & Civil Engineering',
+    ME: 'Mechanical Engineering',
+    CV: 'Civil Engineering',
+    IP: 'Industrial & Production Engineering',
+    BT: 'Biotechnology',
+    AU: 'Automobile Engineering',
+    UE: 'Electronics & Computer Engineering'
 };
 
 // ── Creation Permission Matrix ──

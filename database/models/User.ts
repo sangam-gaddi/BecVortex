@@ -14,6 +14,7 @@ export interface IUser extends Document {
     department?: Department;
     createdBy?: mongoose.Types.ObjectId;
     isActive: boolean;
+    activeSessionId?: string;
     profilePicture?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -64,6 +65,10 @@ const UserSchema: Schema = new Schema(
             type: Boolean,
             default: true,
             index: true,
+        },
+        activeSessionId: {
+            type: String,
+            default: null,
         },
         profilePicture: {
             type: String,
