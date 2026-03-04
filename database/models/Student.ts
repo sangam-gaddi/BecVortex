@@ -42,10 +42,9 @@ const StudentSchema: Schema = new Schema({
   usn: {
     type: String,
     required: false,
-    unique: true,
+    unique: true, // `unique: true` already automatically creates an index
     uppercase: true,
-    sparse: true,
-    index: true
+    sparse: true
   },
   studentName: { type: String, required: true },
   phone: { type: String, required: false },
@@ -69,7 +68,7 @@ const StudentSchema: Schema = new Schema({
   paymentCategory: {
     type: String,
     required: true,
-    enum: ['KCET', 'COMEDK', 'Management']
+    enum: ['KCET', 'COMEDK', 'Management', 'NRI']
   },
 
   // Fee Tracking
@@ -82,16 +81,14 @@ const StudentSchema: Schema = new Schema({
   email: {
     type: String,
     sparse: true,
-    lowercase: true,
-    index: true
+    lowercase: true
   },
   password: { type: String },
   recoveryPhraseHash: { type: String },
   activeSessionId: { type: String, default: null },
   isRegistered: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
 
   // Chat fields

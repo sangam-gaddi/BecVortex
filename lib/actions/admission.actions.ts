@@ -31,6 +31,13 @@ function generateCSN(year: string, progCode: string, sequence: number): string {
     return `${year}${progCode}${paddedSequence}`;
 }
 
+function generateUSN(year: string, dept: string, sequence: number): string {
+    const shortYear = year.slice(-2); // e.g. "26" from "2026"
+    const deptCode = dept.toLowerCase();
+    const paddedSequence = sequence.toString().padStart(3, '0');
+    return `2ba${shortYear}${deptCode}${paddedSequence}`.toUpperCase();
+}
+
 export async function registerStudent(data: AdmissionData) {
     try {
         // 1. Session Verification (Security & RBAC Check)
@@ -43,24 +50,46 @@ export async function registerStudent(data: AdmissionData) {
         await connectToDatabase();
 
         // 2. Generate CSN (College Serial Number)
-        // Find the current highest serial for the year to increment
         const currentYear = new Date().getFullYear().toString();
         const progCode = '0'; // Assuming '0' is for B.E. UG
 
-        const lastStudent = await Student.findOne({
+        const lastStudentCSN = await Student.findOne({
             csn: { $regex: `^${currentYear}${progCode}` }
         }).sort({ csn: -1 }).select('csn').lean();
 
-        let nextSequence = 1;
-        if (lastStudent && lastStudent.csn) {
-            const lastSequence = parseInt(lastStudent.csn.slice(-3), 10);
-            nextSequence = lastSequence + 1;
+        let nextSequenceCSN = 1;
+        if (lastStudentCSN && lastStudentCSN.csn) {
+            const lastSequenceCSN = parseInt(lastStudentCSN.csn.slice(-3), 10);
+            nextSequenceCSN = lastSequenceCSN + 1;
         }
 
-        const csn = generateCSN(currentYear, progCode, nextSequence);
+        const csn = generateCSN(currentYear, progCode, nextSequenceCSN);
 
-        // 3. Assemble complete student record
-        // usn is explicitly omitted because it isn't assigned yet by VTU
+        // 3. Generate USN (University Serial Number)
+        const shortYear = currentYear.slice(-2);
+        const deptCodeRegex = data.department.toUpperCase();
+
+        const lastStudentUSN = await Student.findOne({
+            usn: { $regex: new RegExp(`^2BA${shortYear}${deptCodeRegex}`, 'i') }
+        }).sort({ usn: -1 }).select('usn').lean();
+
+        let nextSequenceUSN = 1;
+        // Optional: If lateral entry, VTU usually starts sequence from 400. 
+        if (data.entryType.includes('Lateral')) {
+            nextSequenceUSN = 400;
+        }
+
+        if (lastStudentUSN && lastStudentUSN.usn) {
+            const lastSeqUSN = parseInt(lastStudentUSN.usn.slice(-3), 10);
+            if (!isNaN(lastSeqUSN)) {
+                // Only increment if the existing sequence is higher than the base sequence
+                nextSequenceUSN = Math.max(nextSequenceUSN, lastSeqUSN + 1);
+            }
+        }
+
+        const usn = generateUSN(currentYear, data.department, nextSequenceUSN);
+
+        // 4. Assemble complete student record
         const newStudent = new Student({
             studentName: data.studentName,
             email: data.email?.toLowerCase(),
@@ -72,6 +101,7 @@ export async function registerStudent(data: AdmissionData) {
             stdType: data.stdType || 'Regular',
             casteCat: data.casteCat,
             csn: csn,
+            usn: usn, // Store the VTU-format USN immediately
             idNo: data.idNo || csn,
             admissionID: data.admissionID || `ADM-${csn}`,
             paymentCategory: data.paymentCategory,
@@ -79,7 +109,7 @@ export async function registerStudent(data: AdmissionData) {
             entranceExamRank: data.entranceExamRank,
             previousCollegeName: data.previousCollegeName,
             previousMarks: data.previousMarks,
-            isRegistered: false, // They must complete onboarding later
+            isRegistered: false, // They must complete onboarding later via /signup
             paidFees: []
         });
 
@@ -91,7 +121,8 @@ export async function registerStudent(data: AdmissionData) {
             success: true,
             studentId: newStudent._id.toString(),
             csn: newStudent.csn,
-            message: `Student registered successfully. Assigned CSN: ${newStudent.csn}`
+            usn: newStudent.usn,
+            message: `Student registered successfully. Assigned USN: ${newStudent.usn} | CSN: ${newStudent.csn}`
         };
 
     } catch (error: any) {

@@ -29,7 +29,7 @@ export function AdmitApp({ owner, userRole, userDepartment, onClose }: AdmitAppP
     const { t } = useI18n();
     const [activeStep, setActiveStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [result, setResult] = useState<{ success: boolean; message: string; csn?: string } | null>(null);
+    const [result, setResult] = useState<{ success: boolean; message: string; csn?: string; usn?: string } | null>(null);
 
     // We need to reliably get the role/dept, so try props first, then sessionStorage
     const [activeRole, setActiveRole] = useState(userRole);
@@ -115,7 +115,7 @@ export function AdmitApp({ owner, userRole, userDepartment, onClose }: AdmitAppP
         try {
             const response = await registerStudent(formData);
             if (response.success) {
-                setResult({ success: true, message: response.message, csn: response.csn });
+                setResult({ success: true, message: response.message, csn: response.csn, usn: response.usn });
                 // Optional: clear form
                 setFormData({
                     studentName: "", email: "", phone: "", permanentAddress: "", department: "",
@@ -327,12 +327,22 @@ export function AdmitApp({ owner, userRole, userDepartment, onClose }: AdmitAppP
                                             : 'bg-red-500/10 border-red-500/20 text-red-300'
                                             }`}>
                                             {result.success ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
-                                            <div>
+                                            <div className="w-full">
                                                 <p className="font-medium">{result.message}</p>
-                                                {result.csn && (
-                                                    <div className="mt-2 p-3 bg-emerald-950/50 rounded-lg border border-emerald-500/20">
-                                                        <p className="text-sm text-emerald-400/80 mb-1">Generated Tracking ID</p>
-                                                        <p className="text-2xl font-mono text-white tracking-widest">{result.csn}</p>
+                                                {(result.csn || result.usn) && (
+                                                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        {result.usn && (
+                                                            <div className="p-3 bg-emerald-950/50 rounded-lg border border-emerald-500/20">
+                                                                <p className="text-xs text-emerald-400/80 mb-1">VTU Reference (USN)</p>
+                                                                <p className="text-xl font-mono text-white tracking-widest">{result.usn}</p>
+                                                            </div>
+                                                        )}
+                                                        {result.csn && (
+                                                            <div className="p-3 bg-emerald-950/50 rounded-lg border border-emerald-500/20">
+                                                                <p className="text-xs text-emerald-400/80 mb-1">Internal Tracking (CSN)</p>
+                                                                <p className="text-xl font-mono text-white tracking-widest">{result.csn}</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
