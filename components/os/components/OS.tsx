@@ -18,6 +18,7 @@ import { useI18n } from '@/components/os/i18n/index';
 import { AppNotificationsProvider } from '@/components/os/components/AppNotificationsContext';
 import { WindowLoading } from '@/components/os/components/ui/WindowLoading';
 import { APP_REGISTRY } from '@/components/os/config/appRegistry';
+import { VORAIsland } from '@/components/os/vora/VORAIsland';
 
 // Load icon positions (supports both pixel and grid formats with migration)
 function loadIconPositions(): Record<string, GridPosition> {
@@ -420,6 +421,14 @@ export default function OS() {
                     onRestoreWindow={focusWindow}
                     onFocusWindow={focusWindow}
                     windows={windows}
+                />
+
+                <VORAIsland
+                  onOpenApp={openWindow}
+                  onCloseApp={(appId) => {
+                    const match = windows.find(w => w.type === appId);
+                    if (match) closeWindow(match.id);
+                  }}
                 />
 
                 <AnimatePresence>
