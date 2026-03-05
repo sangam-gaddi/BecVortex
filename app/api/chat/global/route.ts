@@ -1,51 +1,77 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/database/mongoose';
 import ChatMessage from '@/database/models/ChatMessage';
-import { getSession } from '@/lib/auth/session';
+import User from '@/database/models/User';
+import Student from '@/database/models/Student';
+import { verifyAuth } from '@/lib/actions/chat.actions';
 
+const ONE_MINUTE_MS = 60 * 1000;
+
+/**
+ * Global chat history (last 50, oldest first).
+ * Uses the shared verifyAuth to allow both staff sessions and student auth-token.
+ */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
-    
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+    await verifyAuth();
     await connectToDatabase();
 
-    // Get last 50 global messages
-    const messages = await ChatMessage.find({ type: 'global' })
+    const messages = await ChatMessage.find({ isGlobal: true })
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();
 
-    return NextResponse.json({
-      success: true,
-      messages: messages.reverse(), // Oldest first
+    const senderIds = [...new Set(messages.map((m: any) => String(m.senderId)))];
+    const [users, students] = await Promise.all([
+      User.find({ _id: { $in: senderIds } }).select('_id fullName role department profilePicture').lean(),
+      Student.find({ _id: { $in: senderIds } }).select('_id studentName department profilePicture usn').lean(),
+    ]);
+
+    const senderMap: Record<string, any> = {};
+    users.forEach((u: any) => {
+      senderMap[String(u._id)] = {
+        _id: u._id,
+        fullName: u.fullName,
+        role: u.role,
+        department: u.department,
+        profileImage: u.profilePicture,
+      };
     });
+    students.forEach((s: any) => {
+      senderMap[String(s._id)] = {
+        _id: s._id,
+        fullName: s.studentName,
+        role: 'STUDENT',
+        department: s.department,
+        profileImage: s.profilePicture,
+        usn: s.usn,
+      };
+    });
+
+    const hydrated = messages
+      .map((m: any) => ({
+        ...m,
+        senderId: senderMap[String(m.senderId)] || { _id: m.senderId, fullName: 'Unknown' },
+      }))
+      .reverse(); // oldest first
+
+    return NextResponse.json({ success: true, messages: hydrated });
   } catch (error: any) {
+    const status = error?.message === 'Unauthorized' ? 401 : 500;
     console.error('❌ Error fetching global messages:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch messages' },
-      { status: 500 }
+      { success: false, error: error?.message || 'Failed to fetch messages' },
+      { status }
     );
   }
 }
 
+/**
+ * Create a global message with strict 1-minute TTL.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
-    
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+    const session = await verifyAuth();
     const { message } = await req.json();
 
     if (!message || message.trim().length === 0) {
@@ -64,35 +90,37 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    const Student = (await import('@/database/models/Student')).default;
-    const student = await Student.findOne({ usn: session.usn });
-
-    if (!student) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' },
-        { status: 404 }
-      );
+    // Determine sender profile for reference (optional for clients)
+    let senderProfile: any = null;
+    if (session.userType === 'staff') {
+      senderProfile = await User.findById(session.userId).select('_id fullName role department profilePicture').lean();
+    } else {
+      senderProfile = await Student.findById(session.userId).select('_id studentName department profilePicture usn').lean();
     }
 
-    // Create message
+    const expiresAt = new Date(Date.now() + ONE_MINUTE_MS);
+
     const newMessage = await ChatMessage.create({
-      type: 'global',
-      senderUsn: student.usn,
-      senderName: student.studentName,
-      senderProfilePic: student.profilePicture,
-      message: message.trim(),
-      readBy: [student.usn],
+      senderId: session.userId,
+      receiverId: null,
+      groupId: null,
+      isGlobal: true,
+      content: message.trim(),
+      expiresAt,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: newMessage,
-    });
+    const responseMessage = {
+      ...newMessage.toObject(),
+      senderId: senderProfile || { _id: session.userId, fullName: 'Unknown' },
+    };
+
+    return NextResponse.json({ success: true, message: responseMessage });
   } catch (error: any) {
-    console.error('❌ Error sending message:', error);
+    const status = error?.message === 'Unauthorized' ? 401 : 500;
+    console.error('❌ Error sending global message:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to send message' },
-      { status: 500 }
+      { success: false, error: error?.message || 'Failed to send message' },
+      { status }
     );
   }
 }
