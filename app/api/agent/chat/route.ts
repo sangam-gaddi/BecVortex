@@ -11,11 +11,11 @@ import { getVoraUrl } from '@/lib/agent/voraUrl';
 
 export type VoraProvider = 'ollama' | 'openrouter';
 
-const OLLAMA_MODEL     = process.env.VORA_MODEL           || 'qwen3:8b';
-const OLLAMA_KEY       = process.env.OLLAMA_API_KEY;
-const OPENROUTER_KEY   = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL     || 'nvidia/nemotron-3-nano-30b-a3b:free';
-const OPENROUTER_URL   = 'https://openrouter.ai/api/v1/chat/completions';
+const OLLAMA_MODEL   = process.env.VORA_MODEL || 'qwen3:8b';
+const OLLAMA_KEY     = process.env.OLLAMA_API_KEY;
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// Default OpenRouter model (overridable per-request)
+const OPENROUTER_MODEL_DEFAULT = process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-nano-30b-a3b:free';
 
 // ── Provider: Ollama ──────────────────────────────────────────────────────────
 
@@ -43,9 +43,11 @@ async function callOllama(
 // ── Provider: OpenRouter ──────────────────────────────────────────────────────
 
 function openRouterHeaders(): HeadersInit {
+  // Read at request time so env vars loaded after server start are picked up
+  const key = process.env.OPENROUTER_API_KEY;
   return {
     'Content-Type':  'application/json',
-    'Authorization': `Bearer ${OPENROUTER_KEY}`,
+    'Authorization': `Bearer ${key}`,
     'HTTP-Referer':  'https://bec.edu.in',
     'X-Title':       'VORA - BEC OS Assistant',
   };
@@ -54,8 +56,9 @@ function openRouterHeaders(): HeadersInit {
 async function callOpenRouter(
   messages: unknown[],
   tools?: unknown[],
+  model?: string,
 ): Promise<{ message: any; error?: string }> {
-  const body: any = { model: OPENROUTER_MODEL, messages, stream: false, temperature: 0.3 };
+  const body: any = { model: model || OPENROUTER_MODEL_DEFAULT, messages, stream: false, temperature: 0.3 };
   if (tools?.length) body.tools = tools;
   const res = await fetch(OPENROUTER_URL, {
     method: 'POST', headers: openRouterHeaders(), body: JSON.stringify(body),
@@ -124,17 +127,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Parse body
-  let body: { messages: VoraChatMessage[]; provider?: VoraProvider };
+  let body: { messages: VoraChatMessage[]; provider?: VoraProvider; model?: string };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 }); }
 
-  const { messages, provider = 'ollama' } = body;
+  const { messages, provider = 'ollama', model } = body;
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: '`messages` array is required.' }, { status: 400 });
   }
 
   // Validate provider config
-  if (provider === 'openrouter' && !OPENROUTER_KEY) {
+  if (provider === 'openrouter' && !process.env.OPENROUTER_API_KEY) {
     return NextResponse.json({ error: 'OpenRouter is not configured on the server.' }, { status: 503 });
   }
 
@@ -148,7 +151,7 @@ export async function POST(req: NextRequest) {
   let firstResult: { message: any; error?: string };
   try {
     firstResult = provider === 'openrouter'
-      ? await callOpenRouter(baseMessages, tools)
+      ? await callOpenRouter(baseMessages, tools, model)
       : await callOllama(await getVoraUrl(), baseMessages, tools);
   } catch (err) {
     console.error(`[VORA] ${provider} unreachable:`, err);
@@ -227,7 +230,7 @@ export async function POST(req: NextRequest) {
     let secondResult: { message: any; error?: string };
     try {
       secondResult = provider === 'openrouter'
-        ? await callOpenRouter(followUpMessages)
+        ? await callOpenRouter(followUpMessages, undefined, model)
         : await callOllama(await getVoraUrl(), followUpMessages);
     } catch {
       return NextResponse.json({ error: 'VORA lost connection while processing tools.' }, { status: 503 });

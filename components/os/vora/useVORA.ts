@@ -10,16 +10,18 @@ export type VoraProvider = 'ollama' | 'openrouter';
 interface UseVORAOptions {
   onOsCommand?: (cmd: VoraOsCommand) => void;
   provider?: VoraProvider;
+  model?: string;
 }
 
-export function useVORA({ onOsCommand, provider = 'ollama' }: UseVORAOptions = {}) {
+export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOptions = {}) {
   const [messages,   setMessages]   = useState<VORAMessageData[]>([]);
   const [status,     setStatus]     = useState<VoraStatus>('offline');
   const [isTyping,   setIsTyping]   = useState(false);
   const historyRef  = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
-  // Keep a ref so sendMessage always uses the latest provider without being recreated
   const providerRef = useRef<VoraProvider>(provider);
+  const modelRef    = useRef<string | undefined>(model);
   useEffect(() => { providerRef.current = provider; }, [provider]);
+  useEffect(() => { modelRef.current = model; }, [model]);
 
   // ── Check VORA online status on mount ────────────────────────────
   useEffect(() => {
@@ -70,7 +72,7 @@ export function useVORA({ onOsCommand, provider = 'ollama' }: UseVORAOptions = {
         const res = await fetch('/api/agent/chat', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ messages: historyRef.current, provider: providerRef.current }),
+          body:    JSON.stringify({ messages: historyRef.current, provider: providerRef.current, model: modelRef.current }),
         });
 
         const data = await res.json();

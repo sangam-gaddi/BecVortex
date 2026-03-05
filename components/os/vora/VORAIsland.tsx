@@ -14,6 +14,14 @@ import { useVORA }                 from './useVORA';
 import type { VoraProvider }       from './useVORA';
 import type { VoraOsCommand }      from '@/lib/agent/types';
 
+const OPENROUTER_MODELS = [
+  { id: 'nvidia/nemotron-3-nano-30b-a3b:free',      label: 'Nemotron 30B'    },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free',   label: 'Llama 3.3 70B'  },
+  { id: 'arcee-ai/trinity-mini:free',               label: 'Trinity Mini'   },
+  { id: 'arcee-ai/trinity-large-preview:free',      label: 'Trinity Large'  },
+  { id: 'google/gemma-3-27b-it:free',               label: 'Gemma 3 27B'    },
+];
+
 interface Props {
   /** Called when VORA issues an open_app command. Matches OS.tsx `openWindow`. */
   onOpenApp?: (appId: string) => void;
@@ -33,7 +41,8 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
   const [input,          setInput]          = useState('');
   const [pos,            setPos]            = useState({ x: 0, y: 0 });
   const [dragging,       setDragging]       = useState(false);
-  const [activeProvider, setActiveProvider] = useState<VoraProvider>('ollama');
+  const [activeProvider,  setActiveProvider]  = useState<VoraProvider>('ollama');
+  const [selectedModel,   setSelectedModel]   = useState(OPENROUTER_MODELS[0].id);
 
   const dragStart    = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,9 +50,9 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
 
   const handleOsCommand = useCallback(
     (cmd: VoraOsCommand) => {
-      if (cmd.type === 'open_app' && onOpenApp) {
+      if (cmd.type === 'open_app' && onOpenApp && cmd.appId) {
         onOpenApp(cmd.appId);
-      } else if (cmd.type === 'close_app' && onCloseApp) {
+      } else if (cmd.type === 'close_app' && onCloseApp && cmd.appId) {
         onCloseApp(cmd.appId);
       }
     },
@@ -53,6 +62,7 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
   const { messages, status, isTyping, sendMessage, clearHistory } = useVORA({
     onOsCommand: handleOsCommand,
     provider:    activeProvider,
+    model:       activeProvider === 'openrouter' ? selectedModel : undefined,
   });
 
   // Scroll to latest message
@@ -128,9 +138,11 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
           >
             {/* Header — drag handle */}
             <div
-              className="flex items-center justify-between px-3 py-2 bg-slate-800/90 cursor-grab select-none shrink-0"
+              className="bg-slate-800/90 cursor-grab select-none shrink-0"
               onMouseDown={onMouseDown}
             >
+            {/* Main header row */}
+            <div className="flex items-center justify-between px-3 py-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-[10px] font-bold text-white">
                   V
@@ -184,6 +196,24 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
                   </svg>
                 </button>
               </div>
+            </div>
+            {/* Model selector row — only when Cloud is active */}
+            {activeProvider === 'openrouter' && (
+              <div
+                className="px-3 pb-2 border-b border-slate-700/40"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full text-[10px] bg-slate-700/50 text-slate-200 rounded-md px-2 py-1 border border-slate-600/40 outline-none focus:border-emerald-500/60 cursor-pointer"
+                >
+                  {OPENROUTER_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             </div>
 
             {/* Messages */}

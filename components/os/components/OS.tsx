@@ -167,6 +167,7 @@ export default function OS() {
 
         const appConfig = APP_REGISTRY[type];
         if (!appConfig) {
+            if (!type) return { content: <PlaceholderApp title="Unknown App" />, title: 'Unknown App' };
             const title = type.charAt(0).toUpperCase() + type.slice(1);
             return { content: <PlaceholderApp title={title} />, title };
         }
