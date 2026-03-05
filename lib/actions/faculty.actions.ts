@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/database/mongoose';
 import Faculty from '@/database/models/Faculty';
 import User from '@/database/models/User';
 import Subject from '@/database/models/Subject';
+import Student from '@/database/models/Student';
 import { getSession } from '../auth/session';
 
 // --- Security Helpers ---
@@ -227,6 +228,88 @@ export async function getAssignableSubjects() {
         }).sort({ semester: 1, subjectCode: 1 }).lean();
 
         return { success: true, subjects: JSON.parse(JSON.stringify(subjects)) };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+// --- Class Representative (CR) Management Actions ---
+
+/**
+ * Fetch students for a specific semester in the faculty's department to assign a CR.
+ */
+export async function getStudentsBySemesterForCR(semester: number) {
+    try {
+        const session = await verifyFaculty();
+        await connectToDatabase();
+
+        const dept = session.department?.toUpperCase();
+        if (!dept) return { success: false, error: 'No department assigned.' };
+
+        // Find students in this department and semester
+        const students = await Student.find({
+            department: dept,
+            currentSemester: semester
+        }).select('_id usn studentName isCR crForSemester').sort({ usn: 1 }).lean();
+
+        return { success: true, students: JSON.parse(JSON.stringify(students)) };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+/**
+ * Assign a student as the Class Representative (CR) for a semester.
+ * Ensures only one CR exists per semester in the department.
+ */
+export async function assignCR(studentId: string, semester: number) {
+    try {
+        const session = await verifyFaculty();
+        await connectToDatabase();
+
+        const dept = session.department?.toUpperCase();
+        if (!dept) return { success: false, error: 'No department assigned.' };
+
+        // 1. Remove existing CR for this semester and department
+        await Student.updateMany(
+            { department: dept, crForSemester: semester, isCR: true },
+            { $set: { isCR: false, crForSemester: null } }
+        );
+
+        // 2. Assign the new CR
+        const updated = await Student.findOneAndUpdate(
+            { _id: studentId, department: dept },
+            { $set: { isCR: true, crForSemester: semester } },
+            { new: true }
+        );
+
+        if (!updated) return { success: false, error: 'Student not found or mismatch in department.' };
+
+        return { success: true, message: `${updated.studentName} is now the CR for Semester ${semester}.` };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+/**
+ * Revoke CR privileges from a student.
+ */
+export async function removeCR(studentId: string) {
+    try {
+        const session = await verifyFaculty();
+        await connectToDatabase();
+
+        const dept = session.department?.toUpperCase();
+
+        const updated = await Student.findOneAndUpdate(
+            { _id: studentId, department: dept, isCR: true },
+            { $set: { isCR: false, crForSemester: null } },
+            { new: true }
+        );
+
+        if (!updated) return { success: false, error: 'Student is not a CR or mismatch in department.' };
+
+        return { success: true, message: `${updated.studentName} is no longer a CR.` };
     } catch (e: any) {
         return { success: false, error: e.message };
     }

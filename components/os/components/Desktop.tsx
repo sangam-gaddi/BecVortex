@@ -51,14 +51,14 @@ const BEC_APP_IDS = new Set([
   'account-manager', 'admit-app',
   'subject-directory', 'subject-assigner', 're-registration',
   'course-registration',
-  'teaching-assigner', 'my-classes',
+  'teaching-assigner', 'faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner'
 ]);
 
 // Map of role -> which BEC app IDs belong to that role
 const ROLE_APP_MAP: { role: string; label: string; color: string; apps: string[] }[] = [
   { role: 'HOD', label: '📋 HOD', color: 'text-violet-400', apps: ['account-manager', 'teaching-assigner'] },
   { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration'] },
-  { role: 'FACULTY', label: '👨‍🏫 Faculty', color: 'text-emerald-400', apps: ['my-classes'] },
+  { role: 'FACULTY', label: '👨‍🏫 Faculty', color: 'text-emerald-400', apps: ['faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner'] },
   { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration'] },
 ];
 

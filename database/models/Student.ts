@@ -25,6 +25,8 @@ export interface IStudent extends Document {
   recoveryPhraseHash?: string;
   activeSessionId?: string;
   isRegistered: boolean;
+  isCR?: boolean;
+  crForSemester?: number;
 
   // Academic Tracking fields
   currentSemester: number;
@@ -109,6 +111,14 @@ const StudentSchema: Schema = new Schema({
   isRegistered: {
     type: Boolean,
     default: false
+  },
+  isCR: {
+    type: Boolean,
+    default: false
+  },
+  crForSemester: {
+    type: Number,
+    default: null
   },
 
   // Chat fields

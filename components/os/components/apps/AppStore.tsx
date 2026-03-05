@@ -64,6 +64,8 @@ export function AppStore({ owner, onOpenApp }: AppStoreProps) {
         { id: 'utilities', label: t('appStore.categories.utilities') },
         { id: 'development', label: t('appStore.categories.development') },
         { id: 'system', label: t('appStore.categories.system') },
+        { id: 'academic', label: 'Academic' },
+        { id: 'management', label: 'Management' },
     ];
 
     // Show ALL apps to flex the platform (RBAC is enforced on app open)

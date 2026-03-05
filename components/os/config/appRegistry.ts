@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid, FileSpreadsheet, CalendarCheck, Star } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -43,7 +43,10 @@ const SubjectAssignerApp = dynamic(() => import('@/components/os/components/apps
 const ReRegistrationReviewApp = dynamic(() => import('@/components/os/components/apps/ReRegistrationReviewApp'), { ssr: false });
 const CourseRegistrationApp = dynamic(() => import('@/components/os/components/apps/CourseRegistrationApp'), { ssr: false });
 const TeachingAssignerApp = dynamic(() => import('@/components/os/components/apps/TeachingAssignerApp'), { ssr: false });
-const MyClassesApp = dynamic(() => import('@/components/os/components/apps/MyClassesApp'), { ssr: false });
+const FacultyDashboardApp = dynamic(() => import('@/components/os/components/apps/FacultyDashboardApp'), { ssr: false });
+const MarksUploadApp = dynamic(() => import('@/components/os/components/apps/MarksUploadApp'), { ssr: false });
+const AttendanceUploadApp = dynamic(() => import('@/components/os/components/apps/AttendanceUploadApp'), { ssr: false });
+const CRAssignerApp = dynamic(() => import('@/components/os/components/apps/CRAssignerApp'), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -54,7 +57,7 @@ export interface AppMetadata {
     icon: LucideIcon;
     iconColor: string;           // Gradient class for dock
     iconSolid: string;           // Solid color fallback
-    category: 'productivity' | 'media' | 'utilities' | 'development' | 'system' | 'admin';
+    category: 'productivity' | 'media' | 'utilities' | 'development' | 'system' | 'admin' | 'academic' | 'management';
     isCore: boolean;             // Cannot be uninstalled
     component: ComponentType<any>;
     dockOrder?: number;          // Order in dock (lower = earlier)
@@ -63,6 +66,7 @@ export interface AppMetadata {
     size?: number;               // Size in MB (approximate/simulated)
     ramUsage?: number;           // Base RAM usage in MB (gamified)
     allowedRoles?: string[];     // RBAC: only these roles can see/use this app. undefined = all roles.
+    defaultSize?: { width: number, height: number }; // Default window size
 }
 
 // Centralized App Registry
@@ -421,20 +425,69 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         ramUsage: 100,
         allowedRoles: ['HOD'],
     },
-    'my-classes': {
-        id: 'my-classes',
-        name: 'My Classes',
-        description: 'View your assigned teaching subjects',
-        icon: LayoutGrid,
+    'faculty-dashboard': {
+        id: 'faculty-dashboard',
+        name: 'Faculty Dashboard', // Renamed from My Classes for the new interface
+        description: 'Manage your assigned subjects and access evaluation tools.',
+        icon: GraduationCap,
         iconColor: 'from-indigo-500 to-blue-600',
         iconSolid: '#4f46e5',
-        category: 'productivity',
+        category: 'academic',
         isCore: true,
-        component: MyClassesApp,
+        component: FacultyDashboardApp,
         dockOrder: 3,
         size: 25,
         ramUsage: 80,
         allowedRoles: ['FACULTY'],
+        defaultSize: { width: 800, height: 550 },
+    },
+    'marks-upload': {
+        id: 'marks-upload',
+        name: 'Marks Evaluator',
+        description: 'Upload and convert student marks for CIE and SEE.',
+        icon: FileSpreadsheet,
+        iconColor: 'from-blue-400 to-blue-500',
+        iconSolid: '#3b82f6',
+        category: 'academic',
+        isCore: true,
+        component: MarksUploadApp,
+        dockOrder: 7, // Added dockOrder
+        size: 40, // Added size
+        ramUsage: 120, // Added ramUsage
+        allowedRoles: ['FACULTY'],
+        defaultSize: { width: 900, height: 650 }, // Needs wide table, but restrained to fit 1080p well
+    },
+    'attendance-upload': {
+        id: 'attendance-upload',
+        name: 'Rapid Attendance',
+        description: 'Log daily class attendance using absent-only entry.',
+        icon: CalendarCheck,
+        iconColor: 'from-emerald-400 to-emerald-500',
+        iconSolid: '#10b981',
+        category: 'academic',
+        isCore: true,
+        component: AttendanceUploadApp,
+        dockOrder: 8, // Added dockOrder
+        size: 35, // Added size
+        ramUsage: 100, // Added ramUsage
+        allowedRoles: ['FACULTY'],
+        defaultSize: { width: 800, height: 600 },
+    },
+    'cr-assigner': {
+        id: 'cr-assigner',
+        name: 'CR Assigner',
+        description: 'Appoint Class Representatives for your department semesters.',
+        icon: Star,
+        iconColor: 'from-purple-400 to-purple-500',
+        iconSolid: '#a855f7',
+        category: 'management',
+        isCore: true,
+        component: CRAssignerApp,
+        dockOrder: 9, // Added dockOrder
+        size: 30, // Added size
+        ramUsage: 90, // Added ramUsage
+        allowedRoles: ['FACULTY'],
+        defaultSize: { width: 750, height: 500 },
     },
 };
 

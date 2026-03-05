@@ -37,24 +37,31 @@ export default function CourseRegistrationApp({ userDepartment, userSemester, us
     useEffect(() => { initApp(); }, []);
 
     const initApp = async () => {
-        setAppState('loading');
-
-        // 1. Check if already enrolled (direct assignment by officer)
+        // 1. Fetch Student Profile & Enrollment Status
         const enrolledRes = await getMyEnrolledSubjects();
-        if (enrolledRes.success) {
-            setStudentInfo(enrolledRes.student);
+        if (!enrolledRes.success || !enrolledRes.student) {
+            setAppState('register');
+            toast.error("Failed to load student profile");
+            return;
+        }
 
-            if (enrolledRes.registeredCodes && enrolledRes.registeredCodes.length > 0) {
-                setEnrolledSubjects(enrolledRes.registeredSubjects || []);
-                setAppState('enrolled');
-                return;
-            }
+        const student = enrolledRes.student;
+        setStudentInfo(student);
+
+        // Extract true branch and semester from the backend
+        const dynamicBranch = student.department || branch;
+        const dynamicSemester = student.currentSemester || semester;
+
+        if (enrolledRes.registeredCodes && enrolledRes.registeredCodes.length > 0) {
+            setEnrolledSubjects(enrolledRes.registeredSubjects || []);
+            setAppState('enrolled');
+            return;
         }
 
         // 2. Check for a pending request
         const reqRes = await getMyRegistrationRequests();
         if (reqRes.success && reqRes.requests.length > 0) {
-            const currentSemReq = reqRes.requests.find((r: any) => r.semester === semester && r.status === 'PENDING');
+            const currentSemReq = reqRes.requests.find((r: any) => r.semester === dynamicSemester && r.status === 'PENDING');
             if (currentSemReq) {
                 setExistingRequest(currentSemReq);
                 setAppState('pending');
@@ -64,9 +71,10 @@ export default function CourseRegistrationApp({ userDepartment, userSemester, us
 
         // 3. Show registration form
         try {
-            const subjects = await getBranchSubjectsForSemester(branch, semester);
+            const subjects = await getBranchSubjectsForSemester(dynamicBranch, dynamicSemester);
             setRegularSubjects(subjects);
-            setBacklogSubjects(backlogsArray.map(code => ({ subjectCode: code })));
+            const studentBacklogs = enrolledRes.backlogs || backlogsArray;
+            setBacklogSubjects(studentBacklogs.map((code: string) => ({ subjectCode: code })));
         } catch {
             toast.error("Failed to load registration data.");
         }
