@@ -193,6 +193,13 @@ export async function getMyFacultyProfile() {
             subjectDetails: subjectMap[c.subjectCode] || null,
         }));
 
+        // Fetch the HOD for this faculty's department
+        const hod = await User.findOne({
+            role: 'HOD',
+            department: faculty.department,
+            isActive: true,
+        }).select('fullName').lean() as any;
+
         return {
             success: true,
             faculty: {
@@ -201,6 +208,7 @@ export async function getMyFacultyProfile() {
                 name: faculty.name,
                 department: faculty.department,
             },
+            hodName: hod?.fullName || null,
             assignedClasses: JSON.parse(JSON.stringify(enrichedClasses)),
         };
     } catch (e: any) {
