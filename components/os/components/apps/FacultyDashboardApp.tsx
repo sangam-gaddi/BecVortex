@@ -188,7 +188,7 @@ export default function FacultyDashboardApp({ onOpenApp }: FacultyDashboardAppPr
                                                         className="flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-sm font-medium transition-colors"
                                                     >
                                                         <CalendarCheck className="w-4 h-4" />
-                                                        Absentees
+                                                        Attendance
                                                     </button>
                                                     <button
                                                         onClick={() => handleOpenMarks(cls)}

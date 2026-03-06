@@ -114,7 +114,8 @@ export async function submitRapidAttendance({
 }
 
 /**
- * Get history of attendance records for a specific class
+ * Get history of attendance records for a specific class,
+ * including full absent/present student name+USN breakdowns per session.
  */
 export async function getAttendanceHistory(subjectCode: string, semester: number) {
     try {
@@ -129,19 +130,93 @@ export async function getAttendanceHistory(subjectCode: string, semester: number
             .sort({ date: -1, createdAt: -1 })
             .lean();
 
-        // format sizes
+        // Collect all unique student IDs across all records
+        const allStudentIds = new Set<string>();
+        records.forEach((r: any) => {
+            (r.presentStudents || []).forEach((id: any) => allStudentIds.add(id.toString()));
+            (r.absentStudents || []).forEach((id: any) => allStudentIds.add(id.toString()));
+        });
+
+        // Fetch student info in bulk
+        const studentMap = new Map<string, any>();
+        if (allStudentIds.size > 0) {
+            const students = await Student.find({ _id: { $in: [...allStudentIds] } })
+                .select('_id usn studentName')
+                .lean();
+            students.forEach((s: any) => studentMap.set(s._id.toString(), s));
+        }
+
+        const toStudentDto = (id: any) => {
+            const s = studentMap.get(id.toString());
+            return { _id: id.toString(), usn: s?.usn || '?', name: s?.studentName || 'Unknown' };
+        };
+
         const formatted = records.map((r: any) => ({
-            _id: r._id,
+            _id: r._id.toString(),
             date: r.date,
             topicTaught: r.topicTaught,
             timeSlot: r.timeSlot,
-            facultyName: r.facultyId?.fullName || 'Unknown',
+            facultyName: (r.facultyId as any)?.fullName || 'Unknown',
             presentCount: r.presentStudents?.length || 0,
             absentCount: r.absentStudents?.length || 0,
-            totalCount: (r.presentStudents?.length || 0) + (r.absentStudents?.length || 0)
+            totalCount: (r.presentStudents?.length || 0) + (r.absentStudents?.length || 0),
+            presentStudents: (r.presentStudents || []).map(toStudentDto)
+                .sort((a: any, b: any) => a.usn.localeCompare(b.usn)),
+            absentStudents: (r.absentStudents || []).map(toStudentDto)
+                .sort((a: any, b: any) => a.usn.localeCompare(b.usn)),
         }));
 
         return { success: true, history: JSON.parse(JSON.stringify(formatted)) };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+/**
+ * Get data for the Overall Attendance Book:
+ * - all enrolled students (sorted by USN)
+ * - all attendance sessions (chronological) with presentIds / absentIds arrays
+ */
+export async function getOverallAttendanceBook(subjectCode: string, semester: number) {
+    try {
+        const session = await verifyFaculty();
+        await connectToDatabase();
+
+        const upperCode = subjectCode.toUpperCase();
+
+        // Get enrolled students ordered by USN
+        const enrolledStudents = await Student.find({
+            semester: semester.toString(),
+            isRegistered: true,
+            department: session.department,
+            $or: [
+                { registeredSubjects: upperCode },
+                { registeredSubjects: { $exists: false } },
+                { registeredSubjects: { $size: 0 } },
+            ],
+        }).select('_id usn studentName').sort({ usn: 1 }).lean();
+
+        // Get all sessions in chronological order
+        const records = await AttendanceRecord.find({ subjectCode: upperCode, semester })
+            .sort({ date: 1, createdAt: 1 })
+            .lean();
+
+        const sessions = records.map((r: any) => ({
+            _id: r._id.toString(),
+            date: r.date,
+            timeSlot: r.timeSlot,
+            topicTaught: r.topicTaught,
+            presentIds: (r.presentStudents || []).map((id: any) => id.toString()),
+            absentIds: (r.absentStudents || []).map((id: any) => id.toString()),
+        }));
+
+        const students = enrolledStudents.map((s: any) => ({
+            _id: s._id.toString(),
+            usn: s.usn,
+            name: s.studentName,
+        }));
+
+        return { success: true, students: JSON.parse(JSON.stringify(students)), sessions: JSON.parse(JSON.stringify(sessions)) };
     } catch (e: any) {
         return { success: false, error: e.message };
     }
