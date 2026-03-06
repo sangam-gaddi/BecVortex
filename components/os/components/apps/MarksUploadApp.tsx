@@ -21,9 +21,13 @@ const EXAM_TYPES = [
 ];
 
 const AI_MODELS = [
-    { id: 'qwen3-vl:8b',                        label: 'Qwen3-VL 8B',          tag: 'Local · Fast',     isLocal: true  },
-    { id: 'qwen3-vl:235b-cloud',                 label: 'Qwen3-VL 235B',        tag: 'Local · Accurate', isLocal: true  },
-    { id: 'nvidia/nemotron-nano-12b-v2-vl:free', label: 'Nemotron Nano 12B VL', tag: 'OpenRouter · Free', isLocal: false },
+    { id: 'qwen3-vl:8b',                                    label: 'Qwen3-VL 8B',             tag: 'Local · Fast',        isLocal: true  },
+    { id: 'qwen3-vl:235b-cloud',                             label: 'Qwen3-VL 235B',           tag: 'Local · Accurate',    isLocal: true  },
+    { id: 'nvidia/nemotron-nano-12b-v2-vl:free',             label: 'Nemotron Nano 12B VL',    tag: 'OpenRouter · Free',   isLocal: false },
+    { id: 'qwen/qwen3-vl-30b-a3b-thinking',                  label: 'Qwen3-VL 30B Thinking',  tag: 'OpenRouter · Fast',   isLocal: false },
+    { id: 'qwen/qwen3-vl-235b-a22b-thinking',                label: 'Qwen3-VL 235B Thinking', tag: 'OpenRouter · Best',   isLocal: false },
+    { id: 'mistralai/mistral-small-3.1-24b-instruct:free',   label: 'Mistral Small 3.1 24B',  tag: 'OpenRouter · Free',   isLocal: false },
+    { id: 'google/gemma-3-27b-it:free',                      label: 'Gemma 3 27B',             tag: 'OpenRouter · Free',   isLocal: false },
 ];
 
 const GRADE_ORDER = ['O', 'A+', 'A', 'B+', 'B', 'C', 'P', 'F'];

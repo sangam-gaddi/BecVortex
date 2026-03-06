@@ -45,6 +45,57 @@ CRITICAL RULES:
 Required output format (raw JSON only, no code block):
 {"usn":"<value>","subjectCode":"<value>","rawTotalMarks":<number>,"convertedMarks":<number>}`;
 
+/**
+ * Ultra-compact prompt for local Ollama VL models.
+ * Long prompts cause them to explain their reasoning instead of outputting JSON.
+ */
+const OLLAMA_COMPACT_PROMPT =
+    `Look at this exam answer booklet cover image. Output ONLY a single JSON object — no explanation, no markdown, nothing else.
+
+JSON format (exact keys required):
+{"usn":"<10-char USN e.g. 2BA24CS001>","subjectCode":"<e.g. 22UCS119C>","rawTotalMarks":<0-40>,"convertedMarks":<0-20>}
+
+Rules:
+- USN is top-right/top-center, 10 alphanumeric characters in individual boxes
+- Subject Code is top-left/upper-middle, labeled "Subject Code" or "Course Code"
+- rawTotalMarks = total at bottom of marks table, max 40
+- convertedMarks = next to total, max 20; if missing use ceil(raw/2)
+- If illegible, use "UNKNOWN" for strings
+- Output the JSON object ONLY. No words before or after it.`;
+
+/**
+ * Last-resort fallback: extract values from prose when the model explains instead of outputting JSON.
+ * Works on both Ollama rambling responses and Nemotron reasoning chains.
+ */
+function extractFromProse(text: string): { usn: string; subjectCode: string; rawTotalMarks: number; convertedMarks: number } | null {
+    // USN: 10-char pattern like 2BA26IS001, 1GA23ME012, 2BA24CS001
+    const usnMatch = text.match(/\b([0-9][A-Z]{2}[0-9]{2}[A-Z]{2,3}[0-9]{3})\b/i);
+    // Subject code: patterns like 22UCS119C, 24CS41, 22UMA103C (starts with 2 digits)
+    const subjectMatch = text.match(/\b([0-9]{2}[A-Z]{2,5}[0-9]{2,4}[A-Z]?)\b/i);
+    // Raw marks near keywords, or standalone number ≤40 mentioned near "total" / "raw" / "40"
+    const rawMatch =
+        text.match(/(?:raw|total|out of 40|\/ ?40)[^\d]{0,15}(\d{1,2})/i) ||
+        text.match(/(\d{1,2})\s*(?:\/\s*40|out of 40)/i);
+    // Converted marks
+    const convMatch =
+        text.match(/(?:converted|out of 20|\/ ?20|obtained)[^\d]{0,15}(\d{1,2})/i) ||
+        text.match(/(\d{1,2})\s*(?:\/\s*20|out of 20)/i);
+
+    if (!usnMatch) return null;   // USN is the minimum we need
+
+    const rawTotalMarks = rawMatch ? Math.min(parseInt(rawMatch[1], 10), 40) : 0;
+    const convertedMarks = convMatch
+        ? Math.min(parseInt(convMatch[1], 10), 20)
+        : Math.ceil(rawTotalMarks / 2);
+
+    return {
+        usn: usnMatch[1].toUpperCase(),
+        subjectCode: subjectMatch ? subjectMatch[1].toUpperCase() : 'UNKNOWN',
+        rawTotalMarks,
+        convertedMarks,
+    };
+}
+
 function isOllamaModel(model: string): boolean {
     // Local Ollama model names use the "name:tag" format without a slash
     return !model.includes('/') && (
@@ -73,37 +124,38 @@ export async function POST(req: NextRequest) {
         let resultText: string;
 
         if (isOllamaModel(model)) {
-            // ── Local Ollama endpoint ──────────────────────────────────────────
+            // ── Local Ollama: use /api/generate (more reliable for VL models) ──
             const ollamaEndpoint = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-            const res = await fetch(`${ollamaEndpoint}/api/chat`, {
+            // Use compact prompt — verbose prompts cause local VL models to reason in prose
+            const fullPrompt = OLLAMA_COMPACT_PROMPT;
+            const res = await fetch(`${ollamaEndpoint}/api/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
-                            images: [imageBase64],
-                        },
-                    ],
+                    prompt: fullPrompt,
+                    images: [imageBase64],
                     stream: false,
-                    options: { temperature: 0.05, num_predict: 200 },
+                    options: { temperature: 0.05, num_predict: 256 },
                 }),
-                // 2-minute timeout for local inference
-                signal: AbortSignal.timeout(120_000),
+                // 3-minute timeout for local inference
+                signal: AbortSignal.timeout(180_000),
             });
 
             if (!res.ok) {
                 const errText = await res.text();
-                return NextResponse.json(
-                    { error: `Ollama error (${res.status}): ${errText.slice(0, 300)}` },
-                    { status: 502 }
-                );
+                const isNotFound = res.status === 404 || errText.toLowerCase().includes('not found') || errText.toLowerCase().includes('pull it');
+                const friendlyMsg = isNotFound
+                    ? `Ollama model '${model}' is not installed. Run: ollama pull ${model}`
+                    : `Ollama error (${res.status}): ${errText.slice(0, 300)}`;
+                return NextResponse.json({ error: friendlyMsg }, { status: 502 });
             }
 
             const data = await res.json();
-            resultText = data.message?.content || '';
+            console.log('[vision] ollama raw data keys:', Object.keys(data));
+            // /api/generate → data.response
+            // thinking models may also have data.thinking (separate field)
+            resultText = data.response || data.thinking || '';
 
         } else {
             // ── OpenRouter endpoint ────────────────────────────────────────────
@@ -115,6 +167,8 @@ export async function POST(req: NextRequest) {
                 );
             }
 
+            // Some models (e.g. Nemotron) don't support a separate 'system' role —
+            // merge system instructions into the user content to maximise compatibility.
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -140,45 +194,83 @@ export async function POST(req: NextRequest) {
                             ],
                         },
                     ],
-                    response_format: { type: 'json_object' },
                     temperature: 0.05,
-                    max_tokens: 200,
+                    // Reasoning models (nemotron, qwen-thinking) need lots of tokens to finish thinking + output JSON
+                    max_tokens: 4096,
                 }),
-                signal: AbortSignal.timeout(60_000),
+                signal: AbortSignal.timeout(90_000),
             });
 
             if (!res.ok) {
                 const errText = await res.text();
                 return NextResponse.json(
-                    { error: `OpenRouter error (${res.status}): ${errText.slice(0, 300)}` },
+                    { error: `OpenRouter error (${res.status}): ${errText.slice(0, 500)}` },
                     { status: 502 }
                 );
             }
 
             const data = await res.json();
-            resultText = data.choices?.[0]?.message?.content || '';
+            console.log('[vision] openrouter raw data:', JSON.stringify(data).slice(0, 800));
+
+            const choice = data.choices?.[0];
+            const msg = choice?.message;
+            const finishReason = choice?.finish_reason;
+
+            // content may be a string or an array of content parts (some providers)
+            let rawContent: string = '';
+            if (typeof msg?.content === 'string') {
+                rawContent = msg.content;
+            } else if (Array.isArray(msg?.content)) {
+                rawContent = msg.content.map((c: any) => (typeof c === 'string' ? c : c?.text ?? '')).join('');
+            }
+            // Nemotron / reasoning models: answer is in reasoning when content is null.
+            // If finish_reason==='length', the model hit the server token cap mid-reasoning;
+            // we still try to mine the reasoning text via prose extraction.
+            resultText = rawContent || msg?.reasoning || msg?.reasoning_content || '';
+
+            if (finishReason === 'length' && !rawContent) {
+                console.warn('[vision] OpenRouter hit token limit during reasoning — will attempt prose extraction from reasoning content');
+            }
         }
 
         // ── Parse JSON from model output ──────────────────────────────────────
+        // Log raw output to help debug model response format issues
+        console.log('[vision] raw resultText:', resultText?.slice(0, 500));
+
         if (!resultText) {
             return NextResponse.json({ error: 'AI returned an empty response.' }, { status: 422 });
         }
 
-        // Strip any accidental markdown fences
-        const stripped = resultText.replace(/```(?:json)?/gi, '').trim();
-        const jsonMatch = stripped.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            return NextResponse.json(
-                { error: 'AI did not return valid JSON. Try a different model or clearer image.' },
-                { status: 422 }
-            );
-        }
+        // Step 1: strip <think>...</think> reasoning blocks (Qwen3 thinking models)
+        let cleaned = resultText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+        // Step 2: strip markdown code fences (```json ... ``` or ``` ... ```)
+        cleaned = cleaned.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+
+        // Step 3: find the first complete JSON object
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
 
         let parsed: any;
-        try {
-            parsed = JSON.parse(jsonMatch[0]);
-        } catch {
-            return NextResponse.json({ error: 'Failed to parse AI JSON output.' }, { status: 422 });
+        if (jsonMatch) {
+            try {
+                parsed = JSON.parse(jsonMatch[0]);
+            } catch (parseErr) {
+                console.warn('[vision] JSON.parse failed, trying prose extraction. raw:', jsonMatch[0].slice(0, 200));
+            }
+        }
+
+        // Fallback: extract values from prose/reasoning when model didn't output JSON
+        if (!parsed) {
+            console.warn('[vision] No JSON found — attempting prose extraction from:', cleaned.slice(0, 300));
+            const prose = extractFromProse(resultText);
+            if (prose) {
+                console.log('[vision] Prose extraction succeeded:', prose);
+                return NextResponse.json(prose);
+            }
+            return NextResponse.json(
+                { error: `AI did not return structured data. Raw output: "${cleaned.slice(0, 150)}"` },
+                { status: 422 }
+            );
         }
 
         // ── Sanitise and clamp values ─────────────────────────────────────────
