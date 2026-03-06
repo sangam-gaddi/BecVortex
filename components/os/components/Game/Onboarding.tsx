@@ -29,8 +29,10 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
     const {
         setAccentColor,
         setThemeMode,
+        setColorScheme,
         accentColor,
         themeMode,
+        colorScheme,
         locale,
         setLocale,
         switchUser,
@@ -51,6 +53,7 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
 
     // Step 3: Theme (Local state for preview, applied on finish)
     const [previewAccent, setPreviewAccent] = useState(accentColor || "#3b82f6");
+    const [previewColorScheme, setPreviewColorScheme] = useState<'dark' | 'light'>(colorScheme || 'dark');
 
     // Language Search
     const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +149,7 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
 
                 // 4. Apply Preferences
                 setAccentColor(previewAccent);
+                setColorScheme(previewColorScheme);
 
                 // 5. Mark Complete & Save
                 try {
@@ -168,7 +172,7 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
                 setError(t('onboarding.validation.creationFailed'));
             }
         }, 500);
-    }, [username, fullName, password, hint, previewAccent, locale, addUser, addUserToGroup, switchUser, setAccentColor, setOnboardingComplete, saveFileSystem, onContinue, t]);
+    }, [username, fullName, password, hint, previewAccent, previewColorScheme, locale, addUser, addUserToGroup, switchUser, setAccentColor, setColorScheme, setOnboardingComplete, saveFileSystem, onContinue, t]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -365,10 +369,10 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
                                         <label className="text-sm font-medium text-white/80">{t('onboarding.theme.mode')}</label>
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
-                                                onClick={() => setThemeMode('neutral')} // Previewing
+                                                onClick={() => setPreviewColorScheme('dark')}
                                                 className={cn(
                                                     "p-4 rounded-xl border transition-all text-left group",
-                                                    themeMode === 'neutral' ? "bg-white/10 border-white/40" : "bg-black/20 border-white/5 hover:border-white/10"
+                                                    previewColorScheme === 'dark' ? "bg-white/10 border-white/40" : "bg-black/20 border-white/5 hover:border-white/10"
                                                 )}
                                             >
                                                 <div className="w-full h-24 bg-[#09090b] rounded-lg mb-3 border border-white/10 relative overflow-hidden">
@@ -377,17 +381,20 @@ export function Onboarding({ onContinue, onBack }: OnboardingProps) {
                                                 </div>
                                                 <div className="text-white font-medium group-hover:text-white/90">{t('onboarding.theme.darkMode')}</div>
                                             </button>
-                                            <div className="relative opacity-50 cursor-not-allowed">
-                                                <div className="p-4 rounded-xl border border-white/5 bg-white/5 text-left h-full">
-                                                    <div className="w-full h-24 bg-gray-100 rounded-lg mb-3 border border-black/5 relative overflow-hidden">
-                                                        <div className="absolute top-2 left-2 w-16 h-4 bg-black/10 rounded" />
-                                                    </div>
-                                                    <div className="text-white font-medium">{t('onboarding.theme.lightMode')}</div>
+                                            <button
+                                                onClick={() => setPreviewColorScheme('light')}
+                                                className={cn(
+                                                    "p-4 rounded-xl border transition-all text-left group",
+                                                    previewColorScheme === 'light' ? "bg-white/20 border-white/40" : "bg-white/5 border-white/10 hover:border-white/20"
+                                                )}
+                                            >
+                                                <div className="w-full h-24 rounded-lg mb-3 border border-black/10 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0ede7, #f8f6f2)' }}>
+                                                    <div className="absolute top-0 left-0 right-0 h-5" style={{ background: '#E8E5DFE0' }} />
+                                                    <div className="absolute top-2 left-2 w-16 h-2 rounded" style={{ background: 'rgba(0,0,0,0.12)' }} />
+                                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 h-3 w-24 rounded-full" style={{ background: 'rgba(0,0,0,0.10)' }} />
                                                 </div>
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <span className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-xs text-white font-medium">{t('onboarding.theme.comingSoon')}</span>
-                                                </div>
-                                            </div>
+                                                <div className="text-white font-medium group-hover:text-white/90">{t('onboarding.theme.lightMode')}</div>
+                                            </button>
                                         </div>
                                     </div>
 

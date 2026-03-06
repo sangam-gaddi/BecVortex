@@ -103,6 +103,8 @@ export function Settings({ owner }: { owner?: string }) {
     setAccentColor,
     themeMode,
     setThemeMode,
+    colorScheme,
+    setColorScheme,
     blurEnabled,
     setBlurEnabled,
     reduceMotion,
@@ -432,19 +434,40 @@ export function Settings({ owner }: { owner?: string }) {
             <div className="bg-black/20 rounded-xl p-6 border border-white/5">
               <h3 className="text-lg text-white mb-4">{t('settings.appearance.themeTitle')}</h3>
               <div className={cn("grid gap-4", isNarrow ? "grid-cols-1" : "grid-cols-2")}>
-                <button className="p-4 rounded-lg bg-gray-900/50 border-2 border-white/20 hover:border-white/40 transition-all text-left group flex flex-col h-full">
+                <button
+                  onClick={() => setColorScheme('dark')}
+                  className={cn(
+                    "p-4 rounded-lg border-2 transition-all text-left group flex flex-col h-full",
+                    colorScheme === 'dark'
+                      ? "bg-gray-900/50 border-white/40"
+                      : "bg-black/20 border-white/10 hover:border-white/20"
+                  )}
+                >
                   <div
                     className="w-full bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 rounded mb-3 shrink-0"
                     style={{ aspectRatio: '16/9' }}
                   />
                   <span className="text-white text-sm">{t('settings.appearance.themeDark')}</span>
                 </button>
-                <button className="p-4 rounded-lg bg-black/20 border border-white/10 hover:border-white/20 transition-all opacity-50 cursor-not-allowed text-left flex flex-col h-full">
+                <button
+                  onClick={() => setColorScheme('light')}
+                  className={cn(
+                    "p-4 rounded-lg border-2 transition-all text-left group flex flex-col h-full",
+                    colorScheme === 'light'
+                      ? "bg-gray-900/50 border-white/40"
+                      : "bg-black/20 border-white/10 hover:border-white/20"
+                  )}
+                >
                   <div
-                    className="w-full bg-linear-to-br from-gray-100 to-gray-300 rounded mb-3 shrink-0"
-                    style={{ aspectRatio: '16/9' }}
-                  />
-                  <span className="text-white/60 text-sm">{t('settings.appearance.themeLightSoon')}</span>
+                    className="w-full rounded mb-3 shrink-0"
+                    style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #f0ede7, #f8f6f2, #eceae4)' }}
+                  >
+                    <div className="w-full h-full rounded relative overflow-hidden">
+                      <div className="absolute top-0 left-0 right-0 h-3" style={{ background: '#E8E5DFE6' }} />
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 h-2 w-16 rounded-full" style={{ background: 'rgba(0,0,0,0.12)' }} />
+                    </div>
+                  </div>
+                  <span className="text-white text-sm">{t('settings.appearance.themeLight')}</span>
                 </button>
               </div>
             </div>

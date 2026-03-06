@@ -6,6 +6,7 @@ import { SUPPORTED_LOCALES } from '@/components/os/i18n/translations';
 import { BRAND, DEFAULT_SYSTEM_MEMORY_GB } from '@/components/os/config/systemConfig';
 
 type ThemeMode = 'neutral' | 'shades' | 'contrast';
+type ColorScheme = 'dark' | 'light';
 
 type AppLocale = string;
 
@@ -14,6 +15,8 @@ interface AppContextType {
   setAccentColor: (color: string) => void;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
+  colorScheme: ColorScheme;
+  setColorScheme: (scheme: ColorScheme) => void;
   blurEnabled: boolean;
   setBlurEnabled: (enabled: boolean) => void;
   reduceMotion: boolean;
@@ -80,6 +83,7 @@ const getUserKey = (username: string) => `${STORAGE_KEYS.SETTINGS}_${username}`;
 interface UserPreferences {
   accentColor: string;
   themeMode: ThemeMode;
+  colorScheme: ColorScheme;
   wallpaper: string;
   timeMode: 'server' | 'local';
   blurEnabled?: boolean;
@@ -114,6 +118,7 @@ export interface SystemConfig {
 const DEFAULT_PREFERENCES: UserPreferences = {
   accentColor: BRAND.accentColor,
   themeMode: 'neutral',
+  colorScheme: 'dark',
   wallpaper: 'default',
   timeMode: 'server',
 };
@@ -238,7 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<UserPreferences>(() => loadUserPreferences('root', systemConfig));
 
   // Destructure for easy access (User preferences take precedence/contain the effective value)
-  const { accentColor, themeMode, wallpaper, blurEnabled, reduceMotion, disableShadows, disableGradients, gpuEnabled } = preferences;
+  const { accentColor, themeMode, colorScheme, wallpaper, blurEnabled, reduceMotion, disableShadows, disableGradients, gpuEnabled } = preferences;
   const { devMode, exposeRoot, locale, onboardingComplete, totalMemoryGB, wifiEnabled, wifiNetwork, networkConfigMode, networkIP, networkGateway, networkSubnetMask, networkDNS } = systemConfig;
 
   // Function to switch context to a different user
@@ -273,6 +278,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Setters for Preferences
   const setAccentColor = (color: string) => setPreferences(s => ({ ...s, accentColor: color }));
   const setThemeMode = (mode: ThemeMode) => setPreferences(s => ({ ...s, themeMode: mode }));
+  const setColorScheme = (scheme: ColorScheme) => setPreferences(s => ({ ...s, colorScheme: scheme }));
   const setBlurEnabled = (enabled: boolean) => {
     setPreferences(s => ({ ...s, blurEnabled: enabled }));
     if (activeUser === 'root') setSystemConfig(s => ({ ...s, blurEnabled: enabled }));
@@ -386,6 +392,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAccentColor,
       themeMode,
       setThemeMode,
+      colorScheme: colorScheme ?? 'dark',
+      setColorScheme,
       blurEnabled: blurEnabled ?? systemConfig.blurEnabled,
       setBlurEnabled,
       reduceMotion: reduceMotion ?? systemConfig.reduceMotion,

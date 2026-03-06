@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { AppTemplate } from './AppTemplate';
@@ -183,7 +183,7 @@ export default function AttendanceUploadApp() {
                                 <span className="text-xs font-normal text-emerald-400/80 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/20">BEC Smart System</span>
                             </h1>
                             {selectedClass
-                                ? <p className="text-sm text-emerald-300/60 mt-0.5 font-mono">{selectedClass.subjectCode} Â· {selectedClass.subjectDetails?.title || ''} Â· Sem {selectedClass.semester}</p>
+                                ? <p className="text-sm text-emerald-300/60 mt-0.5 font-mono">{selectedClass.subjectCode} · {selectedClass.subjectDetails?.title || ''} · Sem {selectedClass.semester}</p>
                                 : <p className="text-sm text-emerald-300/60 mt-0.5">Select a class to log attendance</p>}
                         </div>
                     </div>
@@ -208,7 +208,7 @@ export default function AttendanceUploadApp() {
                                 <button key={i} onClick={() => handleSelectClass(cls)}
                                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${selectedClass === cls ? 'bg-emerald-500/20 text-emerald-300 pointer-events-none' : 'text-white/70 hover:bg-white/5'}`}>
                                     <div className="truncate font-semibold">{cls.subjectDetails?.title || cls.subjectCode}</div>
-                                    <div className="text-xs opacity-50 mt-0.5 font-mono">{cls.subjectCode} Â· Sem {cls.semester}</div>
+                                    <div className="text-xs opacity-50 mt-0.5 font-mono">{cls.subjectCode} · Sem {cls.semester}</div>
                                 </button>
                             ))}
                         </div>
@@ -272,7 +272,7 @@ export default function AttendanceUploadApp() {
                                             <div className="flex-1 pt-7 shrink-0">
                                                 <div className="bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-center">
                                                     <p className="text-[9px] text-white/25 uppercase tracking-widest mb-1">Computed Slot</p>
-                                                    <p className="text-sm font-mono font-bold text-white truncate">{timeSlot || 'â€”'}</p>
+                                                    <p className="text-sm font-mono font-bold text-white truncate">{timeSlot || '—'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -286,7 +286,7 @@ export default function AttendanceUploadApp() {
                                             className="w-full bg-black/40 border border-white/10 rounded-xl focus:border-emerald-500 outline-none px-4 py-3 text-sm text-white" />
                                     </div>
 
-                                    {/* Student Grid â€” ENLARGED */}
+                                    {/* Student Grid — ENLARGED */}
                                     <div>
                                         <div className="flex items-center justify-between mb-5">
                                             <label className="text-[11px] uppercase tracking-widest text-white/40 font-bold">
@@ -317,7 +317,7 @@ export default function AttendanceUploadApp() {
                                                         <span className={`text-[11px] font-mono font-black tracking-wide mb-1.5 ${absent ? 'text-red-300/80' : 'text-emerald-400/60'}`}>{student.usn}</span>
                                                         <span className={`text-sm font-semibold leading-snug ${absent ? 'text-red-100' : 'text-white/80'}`}>{student.studentName}</span>
                                                         <span className={`mt-3 text-[10px] px-3 py-1 rounded-full uppercase tracking-widest font-black ${absent ? 'bg-red-500/25 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                                                            {absent ? 'âœ•  Absent' : 'âœ“  Present'}
+                                                            {absent ? '✕  Absent' : '✓  Present'}
                                                         </span>
                                                     </button>
                                                 );
@@ -327,7 +327,7 @@ export default function AttendanceUploadApp() {
 
                                     <button type="submit"
                                         className="w-full py-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 rounded-2xl text-sm font-bold tracking-wide transition-all">
-                                        Review &amp; Confirm â†’
+                                        Review & Confirm →
                                     </button>
                                 </form>
                             </div>
@@ -345,7 +345,7 @@ export default function AttendanceUploadApp() {
                                     <div><p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Date</p><p className="font-mono">{date}</p></div>
                                     <div><p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Time Slot</p><p className="font-mono text-xs">{timeSlot}</p></div>
                                     <div><p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Attendance</p>
-                                        <p><span className="text-emerald-400 font-bold">{students.length - selectedAbsentIds.length}</span> P Â· <span className="text-red-400 font-bold">{selectedAbsentIds.length}</span> A</p></div>
+                                        <p><span className="text-emerald-400 font-bold">{students.length - selectedAbsentIds.length}</span> P · <span className="text-red-400 font-bold">{selectedAbsentIds.length}</span> A</p></div>
                                 </div>
                                 <div>
                                     <p className="text-white/30 text-[10px] uppercase tracking-widest mb-1">Topic Taught</p>
@@ -380,7 +380,7 @@ export default function AttendanceUploadApp() {
                                 </div>
                                 <div className="flex gap-4">
                                     <button onClick={() => setTab('new')} disabled={submitting}
-                                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-all">â† Edit</button>
+                                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-all">← Edit</button>
                                     <button onClick={handleSubmit} disabled={submitting}
                                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all">
                                         {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -473,7 +473,7 @@ export default function AttendanceUploadApp() {
                                         <h2 className="text-lg font-bold flex items-center gap-2">
                                             <BookOpen className="w-5 h-5 text-emerald-400" /> Overall Attendance Book
                                         </h2>
-                                        <p className="text-sm text-white/35 mt-0.5">All sessions Ã— all students â€” updates automatically as you log new sessions</p>
+                                        <p className="text-sm text-white/35 mt-0.5">All sessions × all students — updates automatically as you log new sessions</p>
                                     </div>
                                     {bookData && bookData.sessions.length > 0 && (
                                         <button onClick={downloadCSV}
@@ -488,7 +488,7 @@ export default function AttendanceUploadApp() {
                                     <div className="text-center p-14 bg-white/[0.02] border border-white/5 rounded-2xl">
                                         <BookOpen className="w-12 h-12 text-white/20 mx-auto mb-4" />
                                         <p className="text-white/40 font-medium">No sessions yet.</p>
-                                        <p className="text-white/25 text-sm mt-1">Log your first session â€” this book auto-populates.</p>
+                                        <p className="text-white/25 text-sm mt-1">Log your first session — this book auto-populates.</p>
                                     </div>
                                 ) : (
                                     <div className="bg-[#151824] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
@@ -533,11 +533,11 @@ export default function AttendanceUploadApp() {
                                                                             ? <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-black">P</span>
                                                                             : cell === 'A'
                                                                                 ? <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/20 text-red-400 text-xs font-black">A</span>
-                                                                                : <span className="inline-flex items-center justify-center w-7 h-7 text-white/15 text-xs">â€”</span>}
+                                                                                : <span className="inline-flex items-center justify-center w-7 h-7 text-white/15 text-xs">—</span>}
                                                                     </td>
                                                                 ))}
                                                                 <td className={`text-center py-2.5 px-3 border-l border-white/[0.06] text-sm font-black ${pctColor}`}>
-                                                                    {pct != null ? `${pct}%` : 'â€”'}
+                                                                    {pct != null ? `${pct}%` : '—'}
                                                                 </td>
                                                             </tr>
                                                         );

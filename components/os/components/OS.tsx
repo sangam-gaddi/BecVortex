@@ -46,7 +46,7 @@ function loadIconPositions(): Record<string, GridPosition> {
 }
 
 export default function OS() {
-    const { activeUser, reduceMotion } = useAppContext();
+    const { activeUser, reduceMotion, colorScheme } = useAppContext();
     const { t } = useI18n();
 
     // Track window size for responsive icon positioning
@@ -402,7 +402,14 @@ export default function OS() {
 
     return (
         <AppNotificationsProvider onOpenApp={openWindow}>
-            <div className="dark h-screen w-screen overflow-hidden bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+            <div
+                className={`${colorScheme === 'dark' ? 'dark' : 'light-os'} h-screen w-screen overflow-hidden relative`}
+                style={colorScheme === 'light'
+                    ? { background: 'linear-gradient(135deg, #f0ede7 0%, #f8f6f2 50%, #eceae4 100%)' }
+                    : { background: 'linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a)' }
+                }
+                data-os-theme={colorScheme}
+            >
                 <div className="window-drag-boundary absolute top-7 left-0 right-0 bottom-0 pointer-events-none z-0" />
                 <Desktop
                     onDoubleClick={() => { }}

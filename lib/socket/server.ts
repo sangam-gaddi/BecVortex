@@ -3,6 +3,7 @@ import { Server as HTTPServer } from 'http';
 import { NextApiResponse } from 'next';
 import { connectToDatabase } from '@/database/mongoose';
 import ChatMessage from '@/database/models/ChatMessage';
+import ChatGroup from '@/database/models/ChatGroup';
 import User from '@/database/models/User';
 import Student from '@/database/models/Student';
 
@@ -86,6 +87,16 @@ export const initSocketIO = (res: NextApiResponseWithSocket) => {
           socket.join('global');
           socket.join(`user:${data.usn}`);
 
+          // Auto-join all group rooms this user belongs to
+          if (identity?.id) {
+            try {
+              const userGroups = await ChatGroup.find({ members: identity.id }).select('_id').lean();
+              (userGroups as any[]).forEach((g: any) => socket.join(`group:${String(g._id)}`));
+            } catch (err) {
+              console.error('Failed to join group rooms:', err);
+            }
+          }
+
           onlineUsers.set(socket.id, data.usn);
           console.log(`👤 ${data.name} (${data.usn}) joined`);
 
@@ -166,6 +177,29 @@ export const initSocketIO = (res: NextApiResponseWithSocket) => {
       // Group created – notify all connected clients to re-fetch their groups
       socket.on('group-created', () => {
         socket.broadcast.emit('group-created');
+      });
+
+      // Broadcast an already-saved message to relevant room(s) without double-saving
+      // Called by the client after a server action saves to DB
+      socket.on('broadcast-message', (data: {
+        type: 'global' | 'private' | 'group';
+        message: any;
+        recipientUsn?: string;
+        groupId?: string;
+      }) => {
+        if (data.type === 'global') {
+          // Broadcast to global room, excluding the sender (they already have it)
+          socket.broadcast.to('global').emit('new-global-message', data.message);
+        } else if (data.type === 'private' && data.recipientUsn) {
+          io.to(`user:${data.recipientUsn}`).emit('new-private-message', data.message);
+        } else if (data.type === 'group' && data.groupId) {
+          socket.broadcast.to(`group:${data.groupId}`).emit('new-group-message', data.message);
+        }
+      });
+
+      // Allow client to dynamically join a group room (e.g. after creating a new group)
+      socket.on('join-group', (data: { groupId: string }) => {
+        socket.join(`group:${data.groupId}`);
       });
 
       // Typing indicators

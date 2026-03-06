@@ -158,8 +158,8 @@ export async function removeSubjectFromFaculty(
  */
 export async function getMyFacultyProfile() {
     try {
-        const session = await verifyFaculty();
-        await connectToDatabase();
+        // Run session verification and DB connection in parallel — saves ~100-500ms
+        const [session] = await Promise.all([verifyFaculty(), connectToDatabase()]);
 
         let faculty = await Faculty.findOne({ userId: session.userId }).lean() as any;
 
@@ -196,7 +196,7 @@ export async function getMyFacultyProfile() {
         return {
             success: true,
             faculty: {
-                _id: faculty._id,
+                _id: String(faculty._id),  // serialize ObjectId → string (fixes "plain objects" warning)
                 employeeId: faculty.employeeId,
                 name: faculty.name,
                 department: faculty.department,

@@ -59,7 +59,7 @@ const FacultySchema: Schema = new Schema(
 );
 
 FacultySchema.index({ department: 1 });
-FacultySchema.index({ userId: 1 });
+// NOTE: userId already has a unique index from the field definition above — no explicit index needed here
 
 const Faculty: Model<IFaculty> =
     mongoose.models.Faculty || mongoose.model<IFaculty>('Faculty', FacultySchema);

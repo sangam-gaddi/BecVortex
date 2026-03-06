@@ -587,7 +587,7 @@ const DesktopIconItem = memo(forwardRef<HTMLDivElement, DesktopIconItemProps>(fu
         />
       </div>
 
-      <div className={`text-[11px] leading-tight text-white text-center px-2 py-0.5 rounded
+      <div className={`desktop-icon-label text-[11px] leading-tight text-white text-center px-2 py-0.5 rounded
       ${!disableShadows ? 'drop-shadow-md text-shadow-sm' : ''} truncate w-full`}>
         {icon.name}
       </div>
