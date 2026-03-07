@@ -19,10 +19,13 @@ export const BRAND = {
 
   // Desktop wallpapers
   wallpapers: [
-    { id: 'default', name: 'Nebula', src: '/os-assets/images/wallpaper-nebula.avif' },
+    { id: 'default', name: 'Tahoe', src: '/os-assets/images/wallpaper-tahoe.jpg' },
+    { id: 'nebula', name: 'Nebula', src: '/os-assets/images/wallpaper-nebula.avif' },
     { id: 'city', name: 'City', src: '/os-assets/images/wallpaper-city.avif' },
     { id: 'aurora', name: 'Aurora', src: '/os-assets/images/wallpaper-aurora.avif' },
     { id: 'lake', name: 'Lake', src: '/os-assets/images/wallpaper-lake.avif' },
+    { id: 'bigsur', name: 'Big Sur', src: '/os-assets/images/wallpaper-bigsur.jpg' },
+    { id: 'bec', name: 'BEC Vortex', src: '/os-assets/images/wallpaper-bec.png' },
   ],
 } as const;
 

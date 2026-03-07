@@ -6,7 +6,7 @@ import { cn } from '@/components/os/components/ui/utils';
 
 const pkgMeta = {
     version: '0.8.5',
-    homepage: 'https://github.com/bec-team/bec-vortex-os.js'
+    homepage: 'https://github.com/sangam-gaddi/BecVortex'
 };
 
 interface DevStatusWindowProps {
@@ -55,14 +55,14 @@ export function DevStatusWindow({ className }: DevStatusWindowProps) {
                 {/* CTAs */}
                 <div className="grid gap-2">
                     <a
-                        href="https://discord.gg/AtAVfRDYhG"
+                        href="https://www.linkedin.com/in/sangam-gaddi-8a9a84292/"
                         target="_blank"
                         rel="noreferrer"
                         onClick={() => feedback.click()}
                         className="flex items-center justify-center gap-2 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest hover:bg-transparent hover:border-white hover:text-white transition-all border-2 border-transparent"
                     >
                         <MessageSquare className="w-3 h-3" />
-                        Join Discord
+                        Contact the Dev
                     </a>
                     <a
                         href={pkgMeta.homepage}

@@ -8,7 +8,7 @@ import { feedback } from '@/components/os/services/soundFeedback';
 const pkgMeta = {
     version: '0.8.5',
     license: 'AGPL-3.0',
-    homepage: 'https://github.com/bec-team/bec-vortex-os.js',
+    homepage: 'https://github.com/sangam-gaddi/BecVortex',
     build: { productName: 'BEC VORTEX OS' }
 };
 
@@ -43,15 +43,30 @@ const CREDITS_DATA: ContributorCategory[] = [
         type: 'people',
         contributors: [
             {
-                name: "BEC Team // BEC VORTEX OS",
-                role: "Creator & Maintainer",
-                github: "https://github.com/bec-team",
-                description: "Concept, architecture, design, narrative direction",
+                name: "Sangam Gaddi",
+                role: "Main Architect & Original Creator",
+                github: "https://github.com/sangam-gaddi",
+                description: "Wired and created BEC Vortex OS from scratch — full system architecture, core platform, payment system, and technical leadership.",
                 socials: [
-                    { label: "IG/mental.os", url: "https://www.instagram.com/mental.os" },
-                    { label: "LI/dragoiurobert", url: "https://www.linkedin.com/in/dragoiurobert" },
+                    { label: "LI/sangam-gaddi", url: "https://www.linkedin.com/in/sangam-gaddi-8a9a84292/" },
+                    { label: "GH/sangam-gaddi", url: "https://github.com/sangam-gaddi" },
                 ]
-            }
+            },
+            {
+                name: "Samarth Sugandhi",
+                role: "UI / UX Designer & Event Organizer App",
+                description: "Crafted the visual systems and interaction design of BEC Vortex OS, and handled the Event Organizer application.",
+            },
+            {
+                name: "Yateesh Matuur",
+                role: "AI Engineer — Voice Agent (ARIA)",
+                description: "Handled the AI integrations, specializing in the ARIA voice agent powered by LiveKit, Deepgram, Cerebras, and Cartesia.",
+            },
+            {
+                name: "Arshad",
+                role: "System Hierarchy & Role-Based Architecture",
+                description: "Designed the main system hierarchy and role-based access control (RBAC) model that governs the entire platform.",
+            },
         ]
     },
     {
@@ -59,7 +74,17 @@ const CREDITS_DATA: ContributorCategory[] = [
         title: "Design & UX",
         icon: Palette,
         type: 'text',
-        content: "(Visual systems, interaction concepts, UI explorations)"
+        content: (
+            <div className="space-y-4 text-white/70 leading-relaxed text-sm">
+                <p>
+                    UI/UX led by <span className="text-white font-bold">Samarth Sugandhi</span> — visual systems, interaction concepts, component design, and the Event Organizer app interface.
+                </p>
+                <div className="border-t border-white/10 pt-4">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Design Inspirations</h4>
+                    <p>Heavily inspired by <span className="text-white">macOS</span> and <span className="text-white">Arch Linux</span>, especially <span className="text-white">Garuda OS</span> — for its bold aesthetics, retro-futuristic terminals, and clean system design philosophy.</p>
+                </div>
+            </div>
+        )
     },
     {
         id: 'docs',
@@ -80,38 +105,28 @@ const CREDITS_DATA: ContributorCategory[] = [
         title: "Early Builders",
         icon: Sprout,
         type: 'text',
-        content: "People who helped shape bec-vortex-os.js in its early experimental phase — through feedback, discussion, or belief."
+        content: (
+            <div className="text-white/70 leading-relaxed text-sm">
+                <p>People who helped shape BEC Vortex OS in its early experimental phase — through feedback, testing, design input, and belief in the project.</p>
+                <div className="mt-4 space-y-2">
+                    <p className="text-white/50 text-xs uppercase tracking-widest">The OG BEC BillDesk Team</p>
+                    <p className="text-white">Soham Patil &middot; Krishna Bajantri &middot; Aditya Pattar</p>
+                    <p className="text-white/50 text-xs mt-2">The original BEC BillDesk team whose work laid the foundation for what BEC Vortex became.</p>
+                </div>
+            </div>
+        )
     },
     {
         id: 'community',
         title: "Community",
         icon: Wrench,
-        type: 'people',
-        contributors: [
-            { name: "Oklyne", role: "Code, Translation, Testing", github: "https://github.com/oklyne" },
-            { name: "dannie203", role: "Code, Translation, Testing", github: "https://github.com/dannie203" },
-            {
-                name: "nirgranthi",
-                role: "Code",
-                github: "https://github.com/nirgranthi",
-                socials: [{ label: "IG/s.a.u.r.a.b_", url: "https://www.instagram.com/s.a.u.r.a.b_" }]
-            },
-            { name: "masterofmagic999", role: "Code, Testing", github: "https://github.com/masterofmagic999" },
-            { name: "Marcx5", role: "Code", github: "https://github.com/Marcx5" },
-            {
-                name: "0xGP // gaupoit",
-                role: "Code",
-                github: "https://github.com/gaupoit",
-                socials: [{ label: "Website", url: "https://www.instagram.com/0xgp" }]
-            },
-            { name: "मृत्यु // mriityu", role: "Code, Testing", github: "https://github.com/mriityu" },
-            {
-                name: "Swarit Garewal // GDEV SGBHAI",
-                role: "Code, Security",
-                github: "https://github.com/SGBHAI",
-                socials: [{ label: "IG/garewal.swarit", url: "https://www.instagram.com/garewal.swarit" }]
-            },
-        ]
+        type: 'text',
+        content: (
+            <div className="text-white/70 leading-relaxed text-sm space-y-4">
+                <p>BEC Vortex OS is built for the students and faculty of Basaveshwar Engineering College. The community drives the feedback, testing, and future direction of the platform.</p>
+                <p className="text-white/40 text-xs">Want to see your name here? Contribute to the project on <a href="https://github.com/sangam-gaddi/BecVortex" target="_blank" rel="noreferrer" className="text-white hover:underline">GitHub</a>.</p>
+            </div>
+        )
     },
     {
         id: 'special',
@@ -119,21 +134,26 @@ const CREDITS_DATA: ContributorCategory[] = [
         icon: Sparkles,
         type: 'special',
         content: (
-            <div className="text-white/70 leading-relaxed text-sm">
-                To BigD, <a href="https://github.com/hydroflame" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Hydroflame</a>,
-                and the active contributors of <a href="https://github.com/hydroflame/bitburner-src" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Bitburner</a>,{" "}
-                <a href="https://github.com/viccano" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Victor Cano</a> and players like{" "}
-                <a href="https://www.reddit.com/user/reditO" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Michael Ray / reditO</a> of{" "}
-                <a href="https://store.steampowered.com/app/605230/Grey_Hack/" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Grey Hack</a>,{" "}
-                <a href="https://github.com/andersevenrud" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Anders Evenrud</a> of{" "}
-                <a href="https://github.com/os-js/OS.js" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">OS.js</a>,{" "}
-                Sean Mann // Drizzly Bear of <a href="https://store.steampowered.com/app/469920/hackmud/" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Hackmud</a>,{" "}
-                <a href="https://github.com/eriksvedang" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Erik Svedäng</a> of{" "}
-                <a href="https://store.steampowered.com/app/400110/Else_HeartBreak/" target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">Else Heart.Break()</a>,
-                and many others for inspiring me to create {pkgMeta.build.productName}, and for keeping the genre alive with inspiring work and innovation.
-                <br />
-                <br />
-                BEC Studio for incubation, sponsorship and guidance.
+            <div className="text-white/70 leading-relaxed text-sm space-y-6">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">The OG BEC BillDesk Team</p>
+                    <p>
+                        A huge shoutout to the original BEC BillDesk team who laid the groundwork —{" "}
+                        <span className="text-white font-bold">Soham Patil</span>,{" "}
+                        <span className="text-white font-bold">Krishna Bajantri</span>, and{" "}
+                        <span className="text-white font-bold">Aditya Pattar</span>.{" "}
+                        Their early work and vision inspired and shaped what BEC Vortex OS became.
+                    </p>
+                </div>
+                <div className="border-t border-white/10 pt-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">Design Inspiration</p>
+                    <p>
+                        Inspired by <span className="text-white">macOS</span> and the <span className="text-white">Arch Linux</span> ecosystem — especially <span className="text-white">Garuda OS</span> — for their bold aesthetics, terminal-driven workflows, and commitment to a powerful user experience.
+                    </p>
+                </div>
+                <div className="border-t border-white/10 pt-4 text-white/40 text-xs">
+                    To every student and faculty member of BEC who will use, test, and grow with this platform — thank you.
+                </div>
             </div>
         )
     },
@@ -150,7 +170,7 @@ const CREDITS_DATA: ContributorCategory[] = [
                 <div className="text-white/70 leading-relaxed text-sm">
                     Thinking about building a similar project? <br />
                     <a href={pkgMeta.homepage} target="_blank" rel="noreferrer" className="text-white hover:text-(--accent-user) decoration-white/30 hover:decoration-(--accent-user)">{pkgMeta.build.productName}</a> is
-                    a commercial product, but it is built for educational purposes and is fully open-source. We believe in the power of shared knowledge
+                    built for educational purposes and is fully open-source. We believe in the power of shared knowledge
                     and collaborative innovation.
                 </div>
 
@@ -158,10 +178,11 @@ const CREDITS_DATA: ContributorCategory[] = [
                     <div>
                         <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">Core Framework</h4>
                         <div className="flex flex-wrap gap-2">
-                            <a href="https://react.dev/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">React 19</a>
-                            <a href="https://vitejs.dev/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Vite</a>
+                            <a href="https://nextjs.org/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Next.js 14</a>
+                            <a href="https://react.dev/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">React 18</a>
                             <a href="https://www.typescriptlang.org/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">TypeScript</a>
-                            <a href="https://www.electronjs.org/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Electron</a>
+                            <a href="https://www.mongodb.com/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">MongoDB</a>
+                            <a href="https://mongoosejs.com/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Mongoose</a>
                         </div>
                     </div>
 
@@ -178,16 +199,26 @@ const CREDITS_DATA: ContributorCategory[] = [
                     </div>
 
                     <div>
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">Audio & Utilities</h4>
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">AI & Voice</h4>
                         <div className="flex flex-wrap gap-2">
-                            <a href="https://howlerjs.com/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Howler.js</a>
-                            <a href="https://date-fns.org/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">date-fns</a>
+                            <a href="https://livekit.io/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">LiveKit</a>
+                            <a href="https://deepgram.com/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Deepgram STT</a>
+                            <a href="https://cerebras.ai/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Cerebras LLM</a>
+                            <a href="https://cartesia.ai/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Cartesia TTS</a>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">Payments & Auth</h4>
+                        <div className="flex flex-wrap gap-2">
+                            <a href="https://next-auth.js.org/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">NextAuth.js</a>
+                            <a href="https://www.wagmi.sh/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Wagmi</a>
+                            <a href="https://socket.io/" target="_blank" rel="noreferrer" className="px-2 py-1 bg-white/5 hover:bg-white hover:text-black transition-colors text-[10px] uppercase tracking-wider border border-white/10">Socket.io</a>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-[10px] font-mono text-white/30 border-t border-white/10 pt-4">
-                    Full dependency list available in <a href="https://github.com/bec-team/bec-vortex-os.js/blob/main/OPEN-SOURCE.md" target="_blank" rel="noreferrer" className="text-white/50 hover:text-white decoration-white/30">OPEN-SOURCE.md</a>
+                    Full source available at <a href="https://github.com/sangam-gaddi/BecVortex" target="_blank" rel="noreferrer" className="text-white/50 hover:text-white decoration-white/30">github.com/sangam-gaddi/BecVortex</a>
                 </div>
             </div>
         )
@@ -298,13 +329,13 @@ export function CreditsModal({ onClose }: CreditsModalProps) {
                                             </p>
                                         </div>
                                         <a
-                                            href="https://github.com/bec-team/bec-vortex-os.js/issues"
+                                            href="https://github.com/sangam-gaddi/BecVortex"
                                             target="_blank"
                                             rel="noreferrer"
                                             onClick={() => feedback.click()}
                                             className="px-8 py-3 bg-white text-black font-bold uppercase tracking-widest hover:bg-transparent transition-all border-2 border-transparent hover:border-white hover:text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]"
                                         >
-                                            Report Issue on GitHub
+                                            Contribute on GitHub
                                         </a>
                                     </div>
                                 ) : activeCategory ? (

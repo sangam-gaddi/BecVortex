@@ -80,12 +80,12 @@ export function GameScreenLayout({
                                         }}
                                     >
                                         {`
- █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗      
-██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗ ╚════╝     
-███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║    
-██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗███████║    
-██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║███ ███║    
-╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝    `}
+██████╗ ███████╗ ██████╗
+██╔══██╗██╔════╝██╔════╝
+██████╔╝█████╗  ██║     
+██╔══██╗██╔══╝  ██║     
+██████╔╝███████╗╚██████╗
+╚═════╝ ╚══════╝ ╚═════╝`}
                                     </pre>
                                     <pre
                                         className="font-bold whitespace-pre font-mono leading-none"
@@ -99,12 +99,12 @@ export function GameScreenLayout({
                                         }}
                                     >
                                         {`
-██████╗ ███████╗
-██╔═══██╗██╔════╝
-██║   ██║███████╗
-██║   ██║╚════██║
-╚██████╔╝███████╗
- ╚═════╝ ╚══════╝`}
+██╗   ██╗ ██████╗ ██████╗ ████████╗███████╗██╗  ██╗
+██║   ██║██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝╚██╗██╔╝
+██║   ██║██║   ██║██████╔╝   ██║   █████╗   ╚███╔╝ 
+╚██╗ ██╔╝██║   ██║██╔══██╗   ██║   ██╔══╝   ██╔██╗ 
+ ╚████╔╝ ╚██████╔╝██║  ██║   ██║   ███████╗██╔╝ ██╗
+  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝`}
                                     </pre>
                                 </div>
 
@@ -112,7 +112,7 @@ export function GameScreenLayout({
                                     style={{ gap: 'min(1vh, 8px)', fontSize: 'clamp(12px, 1vw, 24px)', letterSpacing: '0.2em' }}>
                                     <div className="flex items-center" style={{ gap: 'min(1vh, 8px)' }}>
                                         <span className="bg-white/40 rounded-full" style={{ width: 'clamp(3px, 0.25vw, 5px)', height: 'clamp(3px, 0.25vw, 5px)' }} />
-                                        <span>BEC VORTEX</span>
+                                        <span>TEAM ORCA</span>
                                         <span className="bg-white/40 rounded-full" style={{ width: 'clamp(3px, 0.25vw, 5px)', height: 'clamp(3px, 0.25vw, 5px)' }} />
                                     </div>
                                 </div>
@@ -206,10 +206,10 @@ export function GameScreenLayout({
                             </motion.div>
 
                             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-2 text-white drop-shadow-lg text-center">
-                                AURORA <span className="font-light opacity-70">OS</span>
+                                BEC <span className="font-light opacity-70">VORTEX</span>
                             </h1>
                             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-white/50 text-xs md:text-sm tracking-[0.2em] uppercase text-center">
-                                <span>BEC VORTEX</span>
+                                <span>TEAM ORCA</span>
                                 <span className="hidden md:inline">•</span>
                                 <span>per aspera ad astra</span>
                             </div>

@@ -27,13 +27,12 @@ import { renderContextMenuItems } from '@/components/os/components/ui/context-me
 import { FolderOpen, Trash2, Clipboard, Image as ImageIcon, Scissors, Copy, Info } from 'lucide-react';
 import { notify } from '@/components/os/services/notifications';
 import { getAllApps, type AppMetadata } from '@/components/os/config/appRegistry';
+import { BRAND } from '@/components/os/config/systemConfig';
 
-const WALLPAPERS: Record<string, string> = {
-  default: '/os-assets/images/wallpaper-nebula.avif',
-  city: '/os-assets/images/wallpaper-city.avif',
-  aurora: '/os-assets/images/wallpaper-aurora.avif',
-  lake: '/os-assets/images/wallpaper-lake.avif',
-};
+// Build wallpaper map from single source of truth (systemConfig)
+const WALLPAPERS: Record<string, string> = Object.fromEntries(
+  BRAND.wallpapers.map(wp => [wp.id, wp.src])
+);
 
 const ROLE_LABELS: Record<string, string> = {
   MASTER: '🛡️ Master Admin Apps',
@@ -205,12 +204,15 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
             {/* Icon box */}
             <div
               className={`w-14 h-14 rounded-[14px] flex items-center justify-center shadow-xl overflow-hidden transition-all
-                bg-gradient-to-br ${app.iconColor}
+                ${!app.iconImage ? `bg-gradient-to-br ${app.iconColor}` : ''}
                 ${isSelected && !isDragging ? 'ring-2 ring-white/50 ring-offset-1 ring-offset-black/20' : ''}
               `}
               style={{ boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.6)' : '0 4px 16px rgba(0,0,0,0.5)' }}
             >
-              {app.icon && (
+              {app.iconImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={app.iconImage} alt={app.name} className="w-full h-full object-cover" draggable={false} />
+              ) : app.icon && (
                 <app.icon
                   size={28}
                   className="text-white drop-shadow-sm"

@@ -144,8 +144,9 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
             {/* Main header row */}
             <div className="flex items-center justify-between px-3 py-2">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-[10px] font-bold text-white">
-                  V
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/os-assets/ai/vora.svg" alt="VORA" className="w-6 h-6 object-contain" draggable={false} />
                 </div>
                 <span className="text-xs font-semibold text-slate-200">{STATUS_LABEL[status]}</span>
                 <VORAStatusDot status={status} size={7} />
@@ -220,8 +221,9 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
             <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-700">
               {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-xs gap-2 select-none">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600/30 to-indigo-700/30 flex items-center justify-center text-lg">
-                    ✦
+                  <div className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-violet-700/40 to-purple-900/40 border border-violet-500/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/os-assets/ai/vora.svg" alt="VORA" className="w-9 h-9 object-contain" draggable={false} />
                   </div>
                   <p className="text-slate-400 font-medium">Hi, I&apos;m VORA</p>
                   <p className="text-slate-600 text-[10px]">Your AI assistant for BEC OS</p>
@@ -257,23 +259,55 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
             </div>
           </motion.div>
         ) : (
-          /* ── Collapsed pill ────────────────────────────────────── */
+          /* ── Collapsed pill (Siri-jelly, royal purple) ─────────── */
           <motion.button
             key="vora-closed"
-            initial={{ opacity: 0, scale: 0.85 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{    opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.18 }}
+            exit={{    opacity: 0, scale: 0.8 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             onClick={() => setOpen(true)}
             onMouseDown={onMouseDown}
-            className="flex items-center gap-2 pl-2.5 pr-3 py-2 rounded-2xl bg-slate-900/95 backdrop-blur border border-slate-700/60 shadow-xl hover:border-violet-600/50 transition-all group select-none"
+            className="relative flex items-center gap-3 pl-3 pr-4 py-2.5 select-none focus:outline-none group"
             title="Open VORA assistant"
+            style={{ filter: 'drop-shadow(0 8px 32px rgba(109,40,217,0.55))' }}
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-[11px] font-bold text-white">
-              V
+            {/* Jelly morphing blob background */}
+            <motion.div
+              className="absolute inset-0 rounded-[999px]"
+              style={{
+                background: 'linear-gradient(135deg, #5b21b6 0%, #7c3aed 45%, #4c1d95 100%)',
+                border: '1px solid rgba(167,139,250,0.35)',
+              }}
+              animate={{
+                borderRadius: [
+                  '40% 60% 55% 45% / 45% 55% 60% 40%',
+                  '55% 45% 40% 60% / 60% 40% 45% 55%',
+                  '45% 55% 60% 40% / 40% 60% 55% 45%',
+                  '60% 40% 45% 55% / 55% 45% 40% 60%',
+                  '40% 60% 55% 45% / 45% 55% 60% 40%',
+                ],
+                scale: [1, 1.03, 0.98, 1.02, 1],
+              }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Shimmer overlay */}
+            <motion.div
+              className="absolute inset-0 rounded-[999px] opacity-30"
+              style={{ background: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)' }}
+              animate={{ opacity: [0.25, 0.45, 0.25] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Logo */}
+            <div className="relative z-10 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-white/10 shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/os-assets/ai/vora.svg" alt="VORA" className="w-6 h-6 object-contain" draggable={false} />
             </div>
-            <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">VORA</span>
-            <VORAStatusDot status={status} size={7} />
+            {/* Label + status */}
+            <div className="relative z-10 flex items-center gap-2">
+              <span className="text-sm font-bold text-white tracking-widest uppercase" style={{ letterSpacing: '0.12em' }}>VORA</span>
+              <VORAStatusDot status={status} size={8} />
+            </div>
           </motion.button>
         )}
       </AnimatePresence>

@@ -29,6 +29,29 @@ function AppIconComponent({ app, className, size = 'md', showIcon = true }: AppI
     const { disableGradients } = useAppContext();
     const IconComponent = app.icon;
 
+    // Custom image icon takes full precedence
+    if (app.iconImage) {
+        return (
+            <div
+                className={cn(
+                    "rounded-xl flex items-center justify-center shrink-0 transition-all overflow-hidden",
+                    sizeClasses[size],
+                    className
+                )}
+            >
+                {showIcon && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={app.iconImage}
+                        alt={app.name}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                    />
+                )}
+            </div>
+        );
+    }
+
     const bgClass = disableGradients
         ? '' // Solid color applied via inline style
         : `bg-gradient-to-br ${app.iconColor}`;
