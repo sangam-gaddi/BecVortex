@@ -25,6 +25,11 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   const feeIdsParam = searchParams?.get('feeIds');
   const usnParam = searchParams?.get('usn');
+  // Custom fee params (officer-assigned)
+  const customFeeIdParam = searchParams?.get('customFeeId');
+  const customFeeNameParam = searchParams?.get('customFeeName');
+  const customFeeAmountParam = searchParams?.get('customFeeAmount');
+  const isCustomFee = Boolean(customFeeIdParam);
 
   const [currentMethod, setCurrentMethod] = useState(0);
   const [feeIds, setFeeIds] = useState<string[]>([]);
@@ -57,7 +62,13 @@ function PaymentContent() {
       const names = ids.map(id => getFeeById(id)?.name || '').filter(Boolean);
       setFeeNames(names);
     }
-  }, [feeIdsParam]);
+    // Handle officer-assigned custom fee
+    if (customFeeIdParam && customFeeAmountParam) {
+      setFeeIds([customFeeIdParam]);
+      setTotalAmount(parseFloat(customFeeAmountParam) || 0);
+      setFeeNames([customFeeNameParam ? decodeURIComponent(customFeeNameParam) : 'Custom Fee']);
+    }
+  }, [feeIdsParam, customFeeIdParam, customFeeNameParam, customFeeAmountParam]);
 
   // Listen for voice agent actions
   useEffect(() => {
@@ -117,6 +128,15 @@ function PaymentContent() {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Payment update failed');
+
+      // If this was an officer-assigned custom fee, mark it as paid
+      if (isCustomFee && customFeeIdParam) {
+        await fetch('/api/payments/my-custom-fees', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feeId: customFeeIdParam }),
+        }).catch(() => {}); // non-critical
+      }
 
       // Generate Receipt
       if (studentData) {

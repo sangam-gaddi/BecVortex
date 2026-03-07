@@ -382,6 +382,15 @@ export default function MarksUploadApp() {
     // ── Load profile ──────────────────────────────────────────────────────────
     useEffect(() => { loadProfile(); }, []);
 
+    // ── Auto-refresh marks every 30s when a class and exam is selected ────────
+    useEffect(() => {
+        if (!selectedClass || !selectedExam) return;
+        const id = setInterval(() => {
+            fetchStudentsAndGrades(selectedClass.subjectCode, selectedClass.semester, selectedExam.id);
+        }, 30_000);
+        return () => clearInterval(id);
+    }, [selectedClass?.subjectCode, selectedExam?.id]);
+
     const loadProfile = async () => {
         setLoading(true);
         const res = await getMyFacultyProfile();
@@ -591,26 +600,38 @@ export default function MarksUploadApp() {
                                 </p>
                             </div>
                         </div>
-                        {selectedClass && selectedExam && (
-                            <div className="flex items-center gap-2">
-                                {/* AI scan button — only for CIE 1 */}
-                                {isCIE1 && students.length > 0 && (
-                                    <button onClick={() => setAiScanOpen(true)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-semibold transition-all">
-                                        <Sparkles className="w-3.5 h-3.5" /> Scan CIE-1 Sheet
+                        <div className="flex items-center gap-2">
+                            {/* Refresh button — always visible when a class is selected */}
+                            {selectedClass && selectedExam && (
+                                <button
+                                    onClick={() => fetchStudentsAndGrades(selectedClass.subjectCode, selectedClass.semester, selectedExam.id)}
+                                    disabled={fetchingStudents}
+                                    title="Refresh student marks"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 rounded-xl text-xs font-semibold transition-all disabled:opacity-40">
+                                    <RefreshCw className={`w-3.5 h-3.5 ${fetchingStudents ? 'animate-spin' : ''}`} /> Refresh
+                                </button>
+                            )}
+                            {selectedClass && selectedExam && (
+                                <>
+                                    {/* AI scan button — only for CIE 1 */}
+                                    {isCIE1 && students.length > 0 && (
+                                        <button onClick={() => setAiScanOpen(true)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-semibold transition-all">
+                                            <Sparkles className="w-3.5 h-3.5" /> Scan CIE-1 Sheet
+                                        </button>
+                                    )}
+                                    <button onClick={exportCSV}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 rounded-xl text-xs font-semibold transition-all">
+                                        <Download className="w-3.5 h-3.5" /> Export CSV
                                     </button>
-                                )}
-                                <button onClick={exportCSV}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 rounded-xl text-xs font-semibold transition-all">
-                                    <Download className="w-3.5 h-3.5" /> Export CSV
-                                </button>
-                                <button onClick={handleSave} disabled={saving || fetchingStudents}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all">
-                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                    Save &amp; Convert
-                                </button>
-                            </div>
-                        )}
+                                    <button onClick={handleSave} disabled={saving || fetchingStudents}
+                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all">
+                                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Save &amp; Convert
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex-1 flex overflow-hidden">

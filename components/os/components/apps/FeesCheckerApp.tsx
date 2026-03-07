@@ -1,0 +1,335 @@
+"use client";
+import { useState, useEffect, useCallback } from 'react';
+
+// ── Fee structure (standard BEC fees) ────────────────────────────────────────
+const STANDARD_FEES: Record<string, { name: string; icon: string; amount: number }> = {
+  tuition:     { name: 'Tuition Fee',     icon: '📚', amount: 75000 },
+  development: { name: 'Development Fee', icon: '🏗️', amount: 15000 },
+  hostel:      { name: 'Hostel Fee',       icon: '🏠', amount: 45000 },
+  examination: { name: 'Examination Fee', icon: '📝', amount: 5000  },
+};
+
+interface StudentFeeRecord {
+  _id: string; usn: string; studentName: string;
+  department: string; semester: string; paidFees: string[];
+  paymentCategory: string;
+  customFees: Array<{ feeId: string; name: string; category: string; amount: number; isPaid: boolean; description?: string; dueDate?: string }>;
+  payments: Array<{ _id: string; feeIds: string[]; amount: number; paymentMethod: string; createdAt: string; status: string; transactionHash?: string; challanId?: string; receiptData?: string }>;
+}
+
+function fmt(n: number) { return `₹${(n ?? 0).toLocaleString('en-IN')}`; }
+function fmtDate(d: string) { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+
+const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+export function FeesCheckerApp() {
+  const [usnInput, setUsnInput] = useState('');
+  const [semFilter, setSemFilter] = useState('');
+  const [students, setStudents] = useState<StudentFeeRecord[]>([]);
+  const [selected, setSelected] = useState<StudentFeeRecord | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [openReceipt, setOpenReceipt] = useState<any | null>(null);
+  const [error, setError] = useState('');
+  const [userRole, setUserRole] = useState<{ role: string; department: string } | null>(null);
+  const [authError, setAuthError] = useState('');
+
+  const API_BASE = typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+
+  // Verify the logged-in user is a fee officer
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.userType === 'staff' && d.user) {
+            const role = d.user.role; const dept = d.user.department;
+            if ((role === 'OFFICER' || role === 'HOD' || role === 'MASTER') &&
+              (dept === 'FEE_SECTION' || dept === 'EXAMINATION' || role === 'MASTER')) {
+              setUserRole({ role, department: dept });
+            } else {
+              setAuthError('Access Denied: Only Fee Section / Examination department officers can access Fees Checker.');
+            }
+          } else setAuthError('Please log in with a staff account.');
+        } else setAuthError('Not authenticated.');
+      } catch { setAuthError('Could not verify credentials.'); }
+    })();
+  }, []);
+
+  const fetchStudents = useCallback(async (silent = false) => {
+    if (!userRole) return;
+    if (!silent) setLoading(true); else setRefreshing(true);
+    setError('');
+    try {
+      const params = new URLSearchParams();
+      if (usnInput.trim()) params.set('usn', usnInput.trim());
+      if (semFilter) params.set('sem', semFilter);
+      const res = await fetch(`${API_BASE}/api/payments/admin/students?${params}`, { credentials: 'include' });
+      const d = await res.json();
+      if (res.ok) { setStudents(d.students || []); setLastRefresh(new Date()); }
+      else setError(d.error || 'Failed to fetch students');
+    } catch { setError('Network error'); }
+    finally { if (!silent) setLoading(false); else setRefreshing(false); }
+  }, [userRole, usnInput, semFilter, API_BASE]);
+
+  // Auto-fetch when semester filter changes
+  useEffect(() => {
+    if (userRole && semFilter) fetchStudents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semFilter, userRole]);
+
+  // Auto-refresh every 60s
+  useEffect(() => {
+    if (!userRole) return;
+    const id = setInterval(() => fetchStudents(true), 60_000);
+    return () => clearInterval(id);
+  }, [fetchStudents, userRole]);
+
+  if (authError) return (
+    <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
+      <div className="text-center max-w-xs space-y-3">
+        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto"><span className="text-3xl">🔒</span></div>
+        <h2 className="text-white font-semibold">Access Restricted</h2>
+        <p className="text-xs text-[#86868b]">{authError}</p>
+      </div>
+    </div>
+  );
+
+  if (!userRole) return (
+    <div className="w-full h-full flex items-center justify-center bg-[#1e1e1e]">
+      <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="w-full h-full bg-[#1e1e1e] flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="bg-[#2d2d2d] border-b border-[#3d3d3d] px-5 py-3 shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center"><span className="text-lg">💳</span></div>
+            <div>
+              <h1 className="text-sm font-bold text-white">Fees Checker</h1>
+              <p className="text-[11px] text-[#86868b]">{userRole.department} · {userRole.role}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {lastRefresh && <span className="text-[10px] text-[#86868b]">↺ {lastRefresh.toLocaleTimeString()}</span>}
+            <button onClick={() => fetchStudents(true)} disabled={refreshing}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#3d3d3d] text-white rounded-lg text-xs hover:bg-[#4d4d4d] transition-colors disabled:opacity-50">
+              <span className={`text-base leading-none ${refreshing ? 'animate-spin' : ''}`}>↻</span>
+            </button>
+          </div>
+        </div>
+        {/* Search bar */}
+        <div className="mt-3 flex gap-2">
+          <input type="text" placeholder="Search by USN…" value={usnInput} onChange={e => setUsnInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && fetchStudents()}
+            className="flex-1 bg-[#1e1e1e] text-white px-3 py-2 rounded-lg text-sm border border-[#3d3d3d] focus:border-emerald-500/50 focus:outline-none" />
+          <select value={semFilter} onChange={e => setSemFilter(e.target.value)}
+            className="bg-[#1e1e1e] text-white px-3 py-2 rounded-lg text-sm border border-[#3d3d3d] focus:border-emerald-500/50 focus:outline-none">
+            <option value="">All Semesters</option>
+            {SEMESTERS.map(s => <option key={s} value={s}>Semester {s}</option>)}
+          </select>
+          <button onClick={() => fetchStudents()}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors">
+            Search
+          </button>
+        </div>
+      </div>
+
+      {/* Body — two-pane layout */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Student list */}
+        <div className="w-64 border-r border-[#3d3d3d] overflow-y-auto shrink-0">
+          {loading ? (
+            <div className="flex items-center justify-center h-32"><div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+          ) : error ? (
+            <p className="text-red-400 text-xs p-4">{error}</p>
+          ) : students.length === 0 ? (
+            <div className="text-center py-10 px-4 text-[#86868b] text-xs">Search for students above.</div>
+          ) : (
+            <div className="divide-y divide-[#3d3d3d]">
+              {students.map(s => {
+                const pendingCount = Object.keys(STANDARD_FEES).filter(id => !s.paidFees.includes(id)).length
+                  + s.customFees.filter(cf => !cf.isPaid).length;
+                return (
+                  <button key={s._id} onClick={() => setSelected(s)}
+                    className={`w-full text-left px-4 py-3 hover:bg-[#2d2d2d] transition-colors ${selected?._id === s._id ? 'bg-[#2d2d2d] border-l-2 border-emerald-500' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-white truncate">{s.studentName}</p>
+                      {pendingCount > 0 && <span className="text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full">{pendingCount} due</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[11px] text-[#86868b] font-mono">{s.usn}</span>
+                      <span className="text-[#5e5e5e]">·</span>
+                      <span className="text-[11px] text-[#86868b]">Sem {s.semester}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Detail panel */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {!selected ? (
+            <div className="flex items-center justify-center h-full text-center">
+              <div className="space-y-2">
+                <span className="text-4xl block">👈</span>
+                <p className="text-[#86868b] text-sm">Select a student to view fee details</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Student header */}
+              <div className="bg-[#2d2d2d] rounded-xl border border-[#3d3d3d] p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg">
+                  {selected.studentName.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-base font-bold text-white">{selected.studentName}</h2>
+                  <div className="flex gap-2 mt-0.5 flex-wrap">
+                    <span className="text-xs text-[#86868b]">{selected.usn}</span>
+                    <span className="text-xs text-[#86868b]">· {selected.department}</span>
+                    <span className="text-xs text-[#86868b]">· Sem {selected.semester}</span>
+                    <span className="text-xs px-1.5 py-0.5 bg-[#3d3d3d] rounded text-white">{selected.paymentCategory}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-[#86868b]">Total Paid</p>
+                  <p className="text-base font-bold text-emerald-400">
+                    {fmt(Object.entries(STANDARD_FEES).filter(([id]) => selected.paidFees.includes(id)).reduce((s, [, f]) => s + f.amount, 0)
+                      + selected.customFees.filter(cf => cf.isPaid).reduce((s, cf) => s + cf.amount, 0))}
+                  </p>
+                </div>
+              </div>
+
+              {/* Standard fees */}
+              <div className="bg-[#2d2d2d] rounded-xl border border-[#3d3d3d] overflow-hidden">
+                <div className="px-4 py-2 border-b border-[#3d3d3d] bg-[#3d3d3d]/40">
+                  <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Standard Fees</h3>
+                </div>
+                <div className="divide-y divide-[#3d3d3d]">
+                  {Object.entries(STANDARD_FEES).map(([id, fee]) => {
+                    const paid = selected.paidFees.includes(id);
+                    // Find the matching payment record
+                    const payRec = selected.payments.find(p => p.feeIds.includes(id) && p.status === 'completed');
+                    return (
+                      <div key={id} className="flex items-center px-4 py-3">
+                        <span className="text-lg mr-3">{fee.icon}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">{fee.name}</p>
+                          {payRec && <p className="text-[11px] text-[#86868b] mt-0.5">{fmtDate(payRec.createdAt)} · {payRec.paymentMethod?.toUpperCase()}</p>}
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full mr-3 ${paid ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                          {paid ? '✓ Paid' : '⏳ Pending'}
+                        </span>
+                        <span className={`text-sm font-semibold mr-2 ${paid ? 'text-green-400' : 'text-white'}`}>{fmt(fee.amount)}</span>
+                        {payRec && (
+                          <button onClick={() => { try { setOpenReceipt(JSON.parse(payRec.receiptData || '{}')); } catch { setOpenReceipt({ id: payRec._id, amount: payRec.amount, method: payRec.paymentMethod, date: payRec.createdAt }); } }}
+                            className="text-[10px] px-2 py-0.5 bg-[#3d3d3d] text-[#86868b] rounded hover:bg-[#4d4d4d] transition-colors">
+                            View Receipt
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom fees */}
+              {selected.customFees.length > 0 && (
+                <div className="bg-[#2d2d2d] rounded-xl border border-[#3d3d3d] overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[#3d3d3d] bg-[#3d3d3d]/40">
+                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Additional Fees</h3>
+                  </div>
+                  <div className="divide-y divide-[#3d3d3d]">
+                    {selected.customFees.map(cf => (
+                      <div key={cf.feeId} className="flex items-center px-4 py-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">{cf.name}</p>
+                          <p className="text-[11px] text-[#86868b]">{cf.category}{cf.description ? ` · ${cf.description}` : ''}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full mr-3 ${cf.isPaid ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                          {cf.isPaid ? '✓ Paid' : '⏳ Pending'}
+                        </span>
+                        <span className="text-sm font-semibold text-white">{fmt(cf.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment History */}
+              {selected.payments.length > 0 && (
+                <div className="bg-[#2d2d2d] rounded-xl border border-[#3d3d3d] overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[#3d3d3d] bg-[#3d3d3d]/40">
+                    <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Transaction History</h3>
+                  </div>
+                  <div className="divide-y divide-[#3d3d3d]">
+                    {selected.payments.map(p => (
+                      <div key={p._id} className="flex items-center px-4 py-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white">
+                            {p.feeIds.map(id => STANDARD_FEES[id]?.name || id).join(', ')}
+                          </p>
+                          <p className="text-[11px] text-[#86868b] mt-0.5">{fmtDate(p.createdAt)} · {p.paymentMethod?.toUpperCase()}</p>
+                          {(p.transactionHash || p.challanId) && (
+                            <p className="text-[10px] text-[#86868b] font-mono mt-0.5">{p.transactionHash || p.challanId}</p>
+                          )}
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full mr-3 ${p.status === 'completed' ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                          {p.status}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-green-400">{fmt(p.amount)}</span>
+                          <button
+                            onClick={() => { try { setOpenReceipt(JSON.parse(p.receiptData || '{}')); } catch { setOpenReceipt({ id: p._id, amount: p.amount, method: p.paymentMethod, date: p.createdAt, usn: selected.usn, studentName: selected.studentName }); } }}
+                            className="text-[10px] px-2 py-0.5 bg-[#3d3d3d] text-[#86868b] rounded hover:bg-[#4d4d4d]">
+                            Receipt
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Receipt Modal */}
+      {openReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#2d2d2d] border border-[#3d3d3d] rounded-2xl w-80 shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#3d3d3d]">
+              <h3 className="text-sm font-bold text-white">Payment Receipt</h3>
+              <button onClick={() => setOpenReceipt(null)} className="text-[#86868b] hover:text-white text-lg leading-none">×</button>
+            </div>
+            <div className="p-5 space-y-2 text-sm">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center mb-3">
+                <p className="text-green-400 text-2xl font-bold">{fmt(openReceipt.amount || 0)}</p>
+                <p className="text-green-400/70 text-xs mt-1">Payment Confirmed</p>
+              </div>
+              {Object.entries(openReceipt).map(([k, v]) => (
+                <div key={k} className="flex justify-between">
+                  <span className="text-[#86868b] capitalize text-xs">{k.replace(/([A-Z])/g, ' $1')}</span>
+                  <span className="text-white text-xs font-mono">{String(v)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 pb-4">
+              <button onClick={() => setOpenReceipt(null)} className="w-full py-2 bg-[#3d3d3d] text-white rounded-lg text-sm hover:bg-[#4d4d4d]">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

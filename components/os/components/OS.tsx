@@ -19,6 +19,7 @@ import { AppNotificationsProvider } from '@/components/os/components/AppNotifica
 import { WindowLoading } from '@/components/os/components/ui/WindowLoading';
 import { APP_REGISTRY } from '@/components/os/config/appRegistry';
 import { VORAIsland } from '@/components/os/vora/VORAIsland';
+import { ARIAIsland } from '@/components/os/aria/ARIAIsland';
 
 // Load icon positions (supports both pixel and grid formats with migration)
 function loadIconPositions(): Record<string, GridPosition> {
@@ -438,6 +439,8 @@ export default function OS() {
                     if (match) closeWindow(match.id);
                   }}
                 />
+
+                <ARIAIsland />
 
                 <AnimatePresence>
                     {windows.map(window => {

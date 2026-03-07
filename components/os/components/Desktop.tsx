@@ -27,7 +27,6 @@ import { renderContextMenuItems } from '@/components/os/components/ui/context-me
 import { FolderOpen, Trash2, Clipboard, Image as ImageIcon, Scissors, Copy, Info } from 'lucide-react';
 import { notify } from '@/components/os/services/notifications';
 import { getAllApps, type AppMetadata } from '@/components/os/config/appRegistry';
-import { AppIcon } from '@/components/os/components/ui/AppIcon';
 
 const WALLPAPERS: Record<string, string> = {
   default: '/os-assets/images/wallpaper-nebula.avif',
@@ -51,89 +50,190 @@ const BEC_APP_IDS = new Set([
   'account-manager', 'admit-app',
   'subject-directory', 'subject-assigner', 're-registration',
   'course-registration',
-  'teaching-assigner', 'faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner'
+  'teaching-assigner', 'faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner',
 ]);
 
 // Map of role -> which BEC app IDs belong to that role
 const ROLE_APP_MAP: { role: string; label: string; color: string; apps: string[] }[] = [
   { role: 'HOD', label: '📋 HOD', color: 'text-violet-400', apps: ['account-manager', 'teaching-assigner'] },
-  { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration'] },
+  { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration', 'fees-checker', 'edit-fee'] },
   { role: 'FACULTY', label: '👨‍🏫 Faculty', color: 'text-emerald-400', apps: ['faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner'] },
-  { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration'] },
+  { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration', 'bec-pay', 'fee-check', 'download-receipts'] },
 ];
 
-function DesktopAppShortcuts({ onOpenApp }: { onOpenApp: (type: string, data?: any) => void }) {
-  // Get ALL apps (no role filter) so every group is visible
+// ── BEC Vortex draggable app icons on the desktop ───────────────────────────
+const ICON_W = 68;   // icon + label column width
+const ICON_H = 82;   // total height per icon (icon + label)
+const ICON_GAP = 12; // vertical gap
+
+function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => void }) {
   const allApps = getAllApps();
   const appMap = new Map(allApps.map(a => [a.id, a]));
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [dragState, setDragState] = useState<{
+    id: string; startMx: number; startMy: number; startIx: number; startIy: number;
+  } | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Detect current user role from sessionStorage
+  useEffect(() => {
+    if (!mounted) return;
+    const detect = () => {
+      const role = sessionStorage.getItem('bec-vortex-role');
+      const userType = sessionStorage.getItem('bec-vortex-userType');
+      const effectiveRole = role || (userType === 'student' ? 'STUDENT' : null);
+      setCurrentRole(prev => {
+        if (prev !== effectiveRole) {
+          // Role changed: reset positions so new role gets fresh layout
+          localStorage.removeItem(`bec-vortex-icons-${effectiveRole}`);
+        }
+        return effectiveRole;
+      });
+    };
+    detect();
+    const t1 = setTimeout(detect, 800);
+    const t2 = setTimeout(detect, 2000);
+    window.addEventListener('storage', detect);
+    return () => { window.removeEventListener('storage', detect); clearTimeout(t1); clearTimeout(t2); };
+  }, [mounted]);
+
+  // Get apps for current role
+  const myGroup = ROLE_APP_MAP.find(g => g.role === currentRole);
+  const myAppIds = myGroup?.apps || [];
+  const myApps = myAppIds.map(id => appMap.get(id)).filter(Boolean) as AppMetadata[];
+
+  // Initialise positions on right side (one column)
+  useEffect(() => {
+    if (!mounted || myApps.length === 0 || !currentRole) return;
+    const storageKey = `bec-vortex-icons-${currentRole}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only use saved if it has entries for current apps
+        if (myApps.every(a => parsed[a.id])) { setPositions(parsed); return; }
+      } catch { /* ignore */ }
+    }
+    const winW = window.innerWidth;
+    const startX = 24;
+    const startY = 60;
+    const pos: Record<string, { x: number; y: number }> = {};
+    myApps.forEach((app, i) => {
+      pos[app.id] = { x: startX, y: startY + i * (ICON_H + ICON_GAP) };
+    });
+    setPositions(pos);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, myApps.length, currentRole]);
+
+  const savePos = (pos: Record<string, { x: number; y: number }>) => {
+    setPositions(pos);
+    if (currentRole) localStorage.setItem(`bec-vortex-icons-${currentRole}`, JSON.stringify(pos));
+  };
+
+  const handlePointerDown = (e: React.PointerEvent, appId: string) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const pos = positions[appId] || { x: 0, y: 0 };
+    setSelected(appId);
+    setDragState({ id: appId, startMx: e.clientX, startMy: e.clientY, startIx: pos.x, startIy: pos.y });
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent, appId: string) => {
+    if (!dragState || dragState.id !== appId) return;
+    const newX = dragState.startIx + (e.clientX - dragState.startMx);
+    const newY = dragState.startIy + (e.clientY - dragState.startMy);
+    setPositions(prev => ({ ...prev, [appId]: { x: newX, y: newY } }));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent, appId: string) => {
+    if (!dragState || dragState.id !== appId) return;
+    const moved = Math.abs(e.clientX - dragState.startMx) > 4 || Math.abs(e.clientY - dragState.startMy) > 4;
+    if (!moved) {
+      // Single click: just select
+    }
+    savePos({ ...positions, [appId]: positions[appId] || { x: 0, y: 0 } });
+    setDragState(null);
+  };
+
+  const clickTimerRef = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const handleClick = (appId: string) => {
+    // Detect double-click manually
+    if (clickTimerRef.current[appId]) {
+      clearTimeout(clickTimerRef.current[appId]);
+      delete clickTimerRef.current[appId];
+      onOpenApp(appId);
+    } else {
+      clickTimerRef.current[appId] = setTimeout(() => { delete clickTimerRef.current[appId]; }, 350);
+    }
+  };
+
+  if (!mounted || myApps.length === 0) return null;
 
   return (
-    <div
-      className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 z-10 w-[280px] max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
-      <div className="bg-black/40 backdrop-blur-xl border-r border-white/10 rounded-r-2xl p-4 shadow-2xl space-y-3">
-        <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-widest px-1">
-          BEC Vortex Apps
-        </h3>
+    <>
+      {myApps.map((app) => {
+        const pos = positions[app.id];
+        if (!pos) return null;
+        const isDragging = dragState?.id === app.id;
+        const isSelected = selected === app.id;
 
-        {ROLE_APP_MAP.map(group => {
-          const groupApps = group.apps.map(id => appMap.get(id)).filter(Boolean) as AppMetadata[];
-          if (groupApps.length === 0) return null;
-
-          return (
-            <div key={group.role}>
-              <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 px-1 ${group.color}`}>
-                {group.label}
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {groupApps.map(app => (
-                  <button
-                    key={app.id}
-                    onClick={() => onOpenApp(app.id)}
-                    className="flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl hover:bg-white/10 transition-all group"
-                    title={app.description}
-                  >
-                    <AppIcon app={app} size="md" className="w-9 h-9 shadow-lg group-hover:scale-110 transition-transform" showIcon />
-                    <span className="text-[9px] text-white/60 text-center leading-tight max-w-[60px] truncate group-hover:text-white transition-colors">
-                      {app.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
+        return (
+          <div
+            key={app.id}
+            className={`absolute z-10 flex flex-col items-center gap-1.5 cursor-pointer select-none`}
+            style={{
+              left: pos.x,
+              top: pos.y,
+              width: ICON_W,
+              touchAction: 'none',
+              userSelect: 'none',
+              transform: isDragging ? 'scale(1.12)' : 'scale(1)',
+              transition: isDragging ? 'none' : 'transform 0.12s ease',
+              filter: isDragging ? 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' : undefined,
+            }}
+            onPointerDown={(e) => handlePointerDown(e, app.id)}
+            onPointerMove={(e) => handlePointerMove(e, app.id)}
+            onPointerUp={(e) => handlePointerUp(e, app.id)}
+            onClick={() => handleClick(app.id)}
+          >
+            {/* Icon box */}
+            <div
+              className={`w-14 h-14 rounded-[14px] flex items-center justify-center shadow-xl overflow-hidden transition-all
+                bg-gradient-to-br ${app.iconColor}
+                ${isSelected && !isDragging ? 'ring-2 ring-white/50 ring-offset-1 ring-offset-black/20' : ''}
+              `}
+              style={{ boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.6)' : '0 4px 16px rgba(0,0,0,0.5)' }}
+            >
+              {app.icon && (
+                <app.icon
+                  size={28}
+                  className="text-white drop-shadow-sm"
+                  strokeWidth={1.8}
+                />
+              )}
             </div>
-          );
-        })}
-
-        {/* Common apps available to all */}
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider mb-2 px-1 text-white/40">
-            🌐 Common
+            {/* Label */}
+            <span
+              className={`text-[11px] font-medium text-center leading-tight px-1 max-w-full truncate
+                ${isSelected ? 'bg-[#0066cc] text-white rounded px-1.5 py-0.5' : 'text-white'}
+              `}
+              style={{ textShadow: isSelected ? 'none' : '0 1px 4px rgba(0,0,0,0.9), 0 0px 2px rgba(0,0,0,1)' }}
+            >
+              {app.name}
+            </span>
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['bec-pay', 'bec-chat'].map(id => {
-              const app = appMap.get(id);
-              if (!app) return null;
-              return (
-                <button
-                  key={app.id}
-                  onClick={() => onOpenApp(app.id)}
-                  className="flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl hover:bg-white/10 transition-all group"
-                  title={app.description}
-                >
-                  <AppIcon app={app} size="md" className="w-9 h-9 shadow-lg group-hover:scale-110 transition-transform" showIcon />
-                  <span className="text-[9px] text-white/60 text-center leading-tight max-w-[60px] truncate group-hover:text-white transition-colors">
-                    {app.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
+        );
+      })}
+    </>
   );
 }
+
 
 interface DesktopProps {
   onDoubleClick: () => void;
@@ -499,8 +599,8 @@ function DesktopComponent({ onDoubleClick, icons, onUpdateIconsPositions, onIcon
             </ContextMenu>
           ))}
 
-          {/* ── BEC Vortex App Shortcuts (Role-Grouped) ── */}
-          <DesktopAppShortcuts onOpenApp={onOpenApp} />
+          {/* ── BEC Vortex App Shortcuts (Draggable Icons) ── */}
+          <BECVortexDesktopIcons onOpenApp={onOpenApp} />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">

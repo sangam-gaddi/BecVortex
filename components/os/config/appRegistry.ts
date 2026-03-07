@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid, FileSpreadsheet, CalendarCheck, Star } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid, FileSpreadsheet, CalendarCheck, Star, Receipt, FilePenLine, SearchCheck, Download, Mic } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -47,6 +47,10 @@ const FacultyDashboardApp = dynamic(() => import('@/components/os/components/app
 const MarksUploadApp = dynamic(() => import('@/components/os/components/apps/MarksUploadApp'), { ssr: false });
 const AttendanceUploadApp = dynamic(() => import('@/components/os/components/apps/AttendanceUploadApp'), { ssr: false });
 const CRAssignerApp = dynamic(() => import('@/components/os/components/apps/CRAssignerApp'), { ssr: false });
+const FeesCheckerApp = dynamic(() => import('@/components/os/components/apps/FeesCheckerApp').then(m => m.FeesCheckerApp), { ssr: false });
+const EditFeeApp = dynamic(() => import('@/components/os/components/apps/EditFeeApp').then(m => m.EditFeeApp), { ssr: false });
+const FeeCheckApp = dynamic(() => import('@/components/os/components/apps/FeeCheckApp').then(m => m.FeeCheckApp), { ssr: false });
+const DownloadReceiptsApp = dynamic(() => import('@/components/os/components/apps/DownloadReceiptsApp').then(m => m.DownloadReceiptsApp), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -274,7 +278,7 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
     // ── BEC BillDesk Apps ──
     'bec-pay': {
         id: 'bec-pay',
-        name: 'BEC Pay',
+        name: 'BEC Billdesk',
         description: 'Fee payments & invoices',
         icon: CreditCard,
         iconColor: 'from-emerald-500 to-teal-600',
@@ -408,8 +412,68 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         ramUsage: 150,
         allowedRoles: ['STUDENT'],
     },
+    'fee-check': {
+        id: 'fee-check',
+        name: 'Fee Verify',
+        description: 'Verify any payment by ID or reference',
+        icon: SearchCheck,
+        iconColor: 'from-sky-500 to-cyan-500',
+        iconSolid: '#0ea5e9',
+        category: 'productivity',
+        isCore: false,
+        component: FeeCheckApp,
+        size: 20,
+        ramUsage: 60,
+        allowedRoles: ['STUDENT'],
+        defaultSize: { width: 480, height: 580 },
+    },
+    'download-receipts': {
+        id: 'download-receipts',
+        name: 'My Receipts',
+        description: 'Download your paid fee receipts',
+        icon: Download,
+        iconColor: 'from-amber-500 to-yellow-500',
+        iconSolid: '#f59e0b',
+        category: 'productivity',
+        isCore: false,
+        component: DownloadReceiptsApp,
+        size: 25,
+        ramUsage: 80,
+        allowedRoles: ['STUDENT'],
+        defaultSize: { width: 520, height: 600 },
+    },
 
     // ── Faculty Management Apps ──
+    'fees-checker': {
+        id: 'fees-checker',
+        name: 'Fees Checker',
+        description: 'Inspect student fees and payment history',
+        icon: Receipt,
+        iconColor: 'from-teal-500 to-emerald-600',
+        iconSolid: '#14b8a6',
+        category: 'admin',
+        isCore: true,
+        component: FeesCheckerApp,
+        size: 35,
+        ramUsage: 110,
+        allowedRoles: ['OFFICER', 'HOD', 'MASTER'],
+        defaultSize: { width: 860, height: 600 },
+    },
+    'edit-fee': {
+        id: 'edit-fee',
+        name: 'Edit Fee',
+        description: 'Add or edit custom fees for students',
+        icon: FilePenLine,
+        iconColor: 'from-violet-500 to-purple-600',
+        iconSolid: '#7c3aed',
+        category: 'admin',
+        isCore: true,
+        component: EditFeeApp,
+        size: 35,
+        ramUsage: 110,
+        allowedRoles: ['OFFICER', 'HOD', 'MASTER'],
+        defaultSize: { width: 860, height: 620 },
+    },
     'teaching-assigner': {
         id: 'teaching-assigner',
         name: 'Teaching Assigner',
@@ -483,9 +547,9 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         category: 'management',
         isCore: true,
         component: CRAssignerApp,
-        dockOrder: 9, // Added dockOrder
-        size: 30, // Added size
-        ramUsage: 90, // Added ramUsage
+        dockOrder: 9,
+        size: 30,
+        ramUsage: 90,
         allowedRoles: ['FACULTY'],
         defaultSize: { width: 750, height: 500 },
     },
