@@ -79,7 +79,7 @@ export const generateReceipt = (data: ReceiptData, student: StudentData) => {
     doc.setFont('helvetica', 'normal');
     doc.text('USN:', col2X, startY + 6);
     doc.setFont('helvetica', 'bold');
-    doc.text(student.usn, col2X + 25, startY + 6);
+    doc.text(student.usn || '', col2X + 25, startY + 6);
 
     // Row 2
     doc.setFont('helvetica', 'normal');
@@ -94,14 +94,14 @@ export const generateReceipt = (data: ReceiptData, student: StudentData) => {
     doc.text('COMEDK UnAided', col1X + 25, startY + 18);
 
     doc.text('Caste Cat:', col2X, startY + 18);
-    doc.text(student.category, col2X + 25, startY + 18);
+    doc.text(student.category || '', col2X + 25, startY + 18);
 
     // Row 4 (Degree / Branch)
     doc.text('Degree:', col1X, startY + 24);
-    doc.text(student.degree, col1X + 25, startY + 24);
+    doc.text(student.degree || '', col1X + 25, startY + 24);
 
     doc.text('Dept/Sem:', col2X, startY + 24);
-    doc.text(student.branch, col2X + 25, startY + 24);
+    doc.text(student.branch || '', col2X + 25, startY + 24);
 
     // Row 5 (StdType / Date)
     doc.text('StdType:', col1X, startY + 30);
@@ -114,7 +114,7 @@ export const generateReceipt = (data: ReceiptData, student: StudentData) => {
     doc.line(10, startY + 32, pageWidth - 10, startY + 32);
     doc.text('Student Name:', col1X, startY + 37);
     doc.setFont('helvetica', 'bold');
-    doc.text(student.name.toUpperCase(), col1X + 30, startY + 37);
+    doc.text((student.name || '').toUpperCase(), col1X + 30, startY + 37);
     doc.line(10, startY + 40, pageWidth - 10, startY + 40);
 
     // --- Particulars Table ---

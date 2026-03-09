@@ -156,7 +156,7 @@ function PaymentContent() {
             name: studentData.studentName,
             branch: studentData.department, // + Sem?
             degree: studentData.degree,
-            category: studentData.category
+            category: studentData.casteCat
           }
         );
       }
@@ -210,7 +210,7 @@ function PaymentContent() {
             name: studentData.studentName,
             branch: `${studentData.department}/${studentData.semester}`,
             degree: studentData.degree,
-            category: studentData.category
+            category: studentData.casteCat
           }
         );
       }
@@ -256,7 +256,7 @@ function PaymentContent() {
             name: studentData.studentName,
             branch: `${studentData.department}/${studentData.semester}`,
             degree: studentData.degree,
-            category: studentData.category
+            category: studentData.casteCat
           }
         );
       }
