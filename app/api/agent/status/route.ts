@@ -7,33 +7,45 @@ import { getVoraUrl } from '@/lib/agent/voraUrl';
 
 /**
  * GET /api/agent/status
- * Quick health-check — pings Ollama and verifies the model is available.
+ * Checks Ollama first; if unreachable, falls back to OpenRouter if key is set.
  */
 export async function GET() {
+  // ── Try Ollama ────────────────────────────────────────────────────
   try {
     const OLLAMA_URL = await getVoraUrl();
     const headers: HeadersInit = {};
     if (OLLAMA_KEY) headers['Authorization'] = `Bearer ${OLLAMA_KEY}`;
     const res = await fetch(`${OLLAMA_URL}/api/tags`, {
       headers,
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000),
     });
 
-    if (!res.ok) {
-      return NextResponse.json({ online: false, reason: 'Ollama returned an error.' }, { status: 503 });
+    if (res.ok) {
+      const data  = await res.json();
+      const names: string[] = (data?.models ?? []).map((m: any) => m.name as string);
+      const modelAvailable  = names.some((n) => n.startsWith(MODEL.split(':')[0]));
+      return NextResponse.json({
+        online:          true,
+        modelAvailable,
+        provider:        'ollama',
+        model:           MODEL,
+        availableModels: names,
+      });
     }
+  } catch {
+    // Ollama unreachable — fall through to OpenRouter check
+  }
 
-    const data  = await res.json();
-    const names: string[] = (data?.models ?? []).map((m: any) => m.name as string);
-    const modelAvailable  = names.some((n) => n.startsWith(MODEL.split(':')[0]));
-
+  // ── Fall back to OpenRouter ───────────────────────────────────────
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (orKey) {
     return NextResponse.json({
       online:         true,
-      modelAvailable,
-      model:          MODEL,
-      availableModels: names,
+      modelAvailable: true,
+      provider:       'openrouter',
+      model:          process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-nano-30b-a3b:free',
     });
-  } catch {
-    return NextResponse.json({ online: false, reason: 'Could not reach Ollama.' }, { status: 503 });
   }
+
+  return NextResponse.json({ online: false, reason: 'No LLM backend available. Set OPENROUTER_API_KEY on Render.' }, { status: 503 });
 }

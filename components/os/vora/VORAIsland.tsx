@@ -41,7 +41,8 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
   const [input,          setInput]          = useState('');
   const [pos,            setPos]            = useState({ x: 0, y: 0 });
   const [dragging,       setDragging]       = useState(false);
-  const [activeProvider,  setActiveProvider]  = useState<VoraProvider>('ollama');
+  // Default to OpenRouter so VORA works on the deployed app without a local Ollama
+  const [activeProvider,  setActiveProvider]  = useState<VoraProvider>('openrouter');
   const [selectedModel,   setSelectedModel]   = useState(OPENROUTER_MODELS[0].id);
 
   const dragStart    = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
@@ -243,13 +244,13 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={isTyping || status === 'offline'}
-                placeholder={status === 'offline' ? 'VORA is offline…' : 'Ask VORA anything…'}
+                disabled={isTyping}
+                placeholder='Ask VORA anything…'
                 className="flex-1 bg-slate-800 text-slate-100 text-xs placeholder-slate-600 rounded-xl px-3 py-2 border border-slate-700 outline-none focus:border-violet-600/60 transition-colors disabled:opacity-40"
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isTyping || status === 'offline'}
+                disabled={!input.trim() || isTyping}
                 className="w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
               >
                 <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-white" fill="currentColor">

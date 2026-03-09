@@ -15,7 +15,7 @@ interface UseVORAOptions {
 
 export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOptions = {}) {
   const [messages,   setMessages]   = useState<VORAMessageData[]>([]);
-  const [status,     setStatus]     = useState<VoraStatus>('offline');
+  const [status,     setStatus]     = useState<VoraStatus>('online');
   const [isTyping,   setIsTyping]   = useState(false);
   const historyRef  = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const providerRef = useRef<VoraProvider>(provider);
