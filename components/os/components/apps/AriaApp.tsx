@@ -46,8 +46,7 @@ export function AriaApp() {
   const [userSpeaking, setUserSpeaking] = useState(false);
   const [room] = useState(() => new Room());
 
-  const API_BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
   const isConnected  = state === 'connected';
   const isConnecting = state === 'connecting';

@@ -94,8 +94,7 @@ export function BECPortal() {
   const [usnVerified, setUsnVerified] = useState(false);
   const [studentPreview, setStudentPreview] = useState<{ studentName: string; department: string } | null>(null);
 
-  const API_BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
   const loadGrades = useCallback(async () => {
     setGradesLoading(true);

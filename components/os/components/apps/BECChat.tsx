@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppTemplate } from './AppTemplate';
 import { getHierarchyDirectory, searchUserByUSN, createGroup, sendMessage, getUserGroups, getChatHistory, getMyProfile, getUnreadCounts, markMessagesAsRead } from '@/lib/actions/chat.actions';
-import { io, Socket } from 'socket.io-client';
 import { Search, Plus, Hash, Send, Users, ChevronDown, ChevronRight, MessageSquare, Shield, Info, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -39,109 +38,81 @@ export function BECChat() {
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messagesRef = useRef<any[]>([]);
-    const [socket, setSocket] = useState<Socket | null>(null);
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [unreadList, setUnreadList] = useState<any[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    // lastMessages: keyed by 'global' | `private_${id}` | `group_${id}` -> last message preview
     const [lastMessages, setLastMessages] = useState<Record<string, { text: string; time: string }>>({});
 
-    // On Load
+    // Stable refs so polling callbacks are never stale
+    const chatTypeRef = useRef(chatType);
+    const activeTargetRef = useRef(activeTarget);
+    useEffect(() => { chatTypeRef.current = chatType; }, [chatType]);
+    useEffect(() => { activeTargetRef.current = activeTarget; }, [activeTarget]);
+
+    // Defined before all useEffects so they can be captured by intervals
+    const refreshUnread = useCallback(async () => {
+        const res = await getUnreadCounts();
+        if (res.success) setUnreadList(res.unread ?? []);
+    }, []);
+
+    const refreshMessages = useCallback(async () => {
+        const ct = chatTypeRef.current;
+        const at = activeTargetRef.current;
+        let query: any = {};
+        if (ct === 'global') {
+            query.isGlobal = true;
+        } else if (ct === 'private' && at) {
+            query.receiverId = at._id;
+        } else if (ct === 'group' && at) {
+            query.groupId = at._id;
+        } else {
+            return;
+        }
+        const res = await getChatHistory(query);
+        if (res.success) {
+            const normalized = (res.messages || []).map((m: any) => ({ ...m, content: m.content || (m as any).message }));
+            setMessages(prev => {
+                if (normalized.length === 0 && prev.length > 0) return prev;
+                const lastPrevId = prev[prev.length - 1]?._id?.toString();
+                const lastNewId  = normalized[normalized.length - 1]?._id?.toString();
+                if (lastPrevId && lastPrevId === lastNewId && normalized.length === prev.length) return prev;
+                return normalized;
+            });
+            if (normalized.length > 0) {
+                const last = normalized[normalized.length - 1];
+                const previewKey = ct === 'global' ? 'global'
+                    : ct === 'group' ? `group_${at?._id}`
+                    : `private_${at?.usn || at?.email || at?._id}`;
+                setLastMessages(prev => ({ ...prev, [previewKey]: { text: last.content, time: last.createdAt } }));
+            }
+        }
+    }, []);
+
+    // Initial load + 3-second polling
     useEffect(() => {
         loadInitialData();
-        // Polling as fallback for when socket is disconnected
+        refreshMessages();
         const interval = setInterval(() => {
             refreshMessages();
             refreshUnread();
-        }, 15000);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [refreshMessages, refreshUnread]);
 
-        return () => {
-            clearInterval(interval);
-            if (socket) socket.disconnect();
-        };
-    }, []);
-
-    // Scroll to bottom
+    // Scroll to bottom on new messages
     useEffect(() => {
         if (messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
     }, [messages]);
 
-    useEffect(() => {
-        messagesRef.current = messages;
-    }, [messages]);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
+    // Clear + re-fetch when switching conversations
     useEffect(() => {
-        setMessages([]); // clear on switch
+        setMessages([]);
         refreshMessages();
     }, [chatType, activeTarget]);
-
-    // Realtime append via socket to avoid flicker when polling is empty or delayed
-    useEffect(() => {
-        if (!socket) return;
-
-        const normalizeMsg = (msg: any) => ({ ...msg, content: msg.content || msg.message });
-
-        const handleGlobal = (msg: any) => {
-            const normalized = normalizeMsg(msg);
-            setLastMessages(prev => ({ ...prev, global: { text: normalized.content, time: normalized.timestamp || new Date().toISOString() } }));
-            if (chatType !== 'global') return;
-            setMessages(prev => [...prev, normalized]);
-        };
-
-        const handlePrivate = (msg: any) => {
-            const normalized = normalizeMsg(msg);
-            const myId = (currentUser?.usn || currentUser?._id)?.toString();
-            const partnerUsn = msg.senderUsn === myId ? msg.recipientUsn : msg.senderUsn;
-            setLastMessages(prev => ({
-                ...prev,
-                [`private_${partnerUsn}`]: { text: normalized.content, time: normalized.timestamp || new Date().toISOString() },
-            }));
-            if (chatType !== 'private' || !activeTarget) return;
-            const targetKey = (activeTarget.usn || activeTarget.email || activeTarget._id)?.toString();
-            if (partnerUsn === targetKey) {
-                setMessages(prev => {
-                    // Deduplicate — sender already has it via optimistic update
-                    if (prev.some(m => m._id?.toString() === normalized._id?.toString())) return prev;
-                    return [...prev, normalized];
-                });
-            }
-        };
-
-        const handleGroup = (msg: any) => {
-            const normalized = normalizeMsg(msg);
-            const gId = (msg.groupId?._id || msg.groupId)?.toString();
-            setLastMessages(prev => ({
-                ...prev,
-                [`group_${gId}`]: { text: normalized.content, time: normalized.timestamp || new Date().toISOString() },
-            }));
-            if (chatType !== 'group' || !activeTarget) return;
-            if (gId === activeTarget._id?.toString()) {
-                setMessages(prev => {
-                    // Deduplicate — the sender already has it via optimistic update
-                    if (prev.some(m => m._id?.toString() === normalized._id?.toString())) return prev;
-                    return [...prev, normalized];
-                });
-            }
-        };
-
-        const handleGroupCreated = () => {
-            getUserGroups().then(res => { if (res.success) setGroups(res.groups); });
-        };
-
-        socket.on('new-global-message', handleGlobal);
-        socket.on('new-private-message', handlePrivate);
-        socket.on('new-group-message', handleGroup);
-        socket.on('group-created', handleGroupCreated);
-
-        return () => {
-            socket.off('new-global-message', handleGlobal);
-            socket.off('new-private-message', handlePrivate);
-            socket.off('new-group-message', handleGroup);
-            socket.off('group-created', handleGroupCreated);
-        };
-    }, [socket, chatType, activeTarget, currentUser]);
 
     const loadInitialData = async () => {
         try {
@@ -157,77 +128,20 @@ export function BECChat() {
                 setGroups(groupsRes.groups);
                 setCanCreateGroup(true);
             }
-            if (unreadRes.success) {
-                setUnreadList(unreadRes.unread ?? []);
-            }
-
-            // Socket presence initialization
+            if (unreadRes.success) setUnreadList(unreadRes.unread ?? []);
             if (profileRes.success && profileRes.profile) {
                 setCurrentUser(profileRes.profile);
-                const newSocket = io(process.env.NEXT_PUBLIC_APP_URL || '', { path: '/api/socket' });
-                newSocket.emit('join', {
-                    usn: profileRes.profile.usn || profileRes.profile._id,
-                    name: profileRes.profile.fullName
-                });
-
-                newSocket.on('online-users', (users: string[]) => {
-                    setOnlineUsers(users);
-                });
-
-                // Explicitly join all group rooms on the client side too (belt-and-suspenders)
-                if (groupsRes.success && groupsRes.groups?.length > 0) {
-                    groupsRes.groups.forEach((g: any) => {
-                        newSocket.emit('join-group', { groupId: String(g._id) });
-                    });
-                }
-
-                setSocket(newSocket);
             }
         } catch (err) {
             console.error(err);
         }
     };
 
-    const refreshUnread = async () => {
-        const res = await getUnreadCounts();
-        if (res.success) setUnreadList(res.unread ?? []);
-    };
-
     const setPrivateChat = async (user: any) => {
         setChatType('private');
         setActiveTarget(user);
-
-        // Optimistically clear their unread badge
         setUnreadList(prev => prev.filter(u => u.senderId !== String(user._id)));
         await markMessagesAsRead(user._id);
-    };
-
-    const refreshMessages = async () => {
-        let query: any = {};
-        if (chatType === 'global') {
-            query.isGlobal = true;
-        } else if (chatType === 'private' && activeTarget) {
-            query.receiverId = activeTarget._id;
-        } else if (chatType === 'group' && activeTarget) {
-            query.groupId = activeTarget._id;
-        } else {
-            return;
-        }
-
-        const res = await getChatHistory(query);
-        if (res.success) {
-            const normalized = (res.messages || []).map((m: any) => ({ ...m, content: m.content || (m as any).message }));
-            if (normalized.length === 0 && messagesRef.current.length > 0) return;
-            setMessages(normalized);
-            // Update last message preview for this conversation
-            if (normalized.length > 0) {
-                const last = normalized[normalized.length - 1];
-                const previewKey = chatType === 'global' ? 'global'
-                    : chatType === 'group' ? `group_${activeTarget?._id}`
-                    : `private_${activeTarget?.usn || activeTarget?.email || activeTarget?._id}`;
-                setLastMessages(prev => ({ ...prev, [previewKey]: { text: last.content, time: last.createdAt } }));
-            }
-        }
     };
 
     const handleManualRefresh = async () => {
@@ -254,29 +168,10 @@ export function BECChat() {
         const res = await sendMessage(payload);
         if (res.success) {
             setInputText('');
-            // Optimistic local update
-            setMessages(prev => [...prev, res.message]);
-            // Real-time broadcast to all other connected clients
-            if (socket) {
-                // Enrich the message with senderUsn/recipientUsn so handlePrivate
-                // on the receiver's side can route it to the correct conversation.
-                const enriched = {
-                    ...res.message,
-                    senderUsn: currentUser?.usn || currentUser?.email || String(currentUser?._id),
-                    senderName: currentUser?.fullName,
-                    recipientUsn: chatType === 'private'
-                        ? (activeTarget?.usn || activeTarget?.email)
-                        : undefined,
-                };
-                socket.emit('broadcast-message', {
-                    type: chatType,
-                    message: enriched,
-                    recipientUsn: enriched.recipientUsn,
-                    groupId: chatType === 'group'
-                        ? String(activeTarget?._id)
-                        : undefined,
-                });
-            }
+            // Optimistic local append
+            setMessages(prev => [...prev, { ...res.message, content: res.message.content || res.message.message }]);
+            // Refresh after 500ms to sync (deduplication in refreshMessages prevents flicker)
+            setTimeout(refreshMessages, 500);
         } else {
             toast.error(res.error || 'Failed to send');
         }

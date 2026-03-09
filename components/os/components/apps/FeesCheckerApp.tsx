@@ -35,8 +35,7 @@ export function FeesCheckerApp() {
   const [userRole, setUserRole] = useState<{ role: string; department: string } | null>(null);
   const [authError, setAuthError] = useState('');
 
-  const API_BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
   // Verify the logged-in user is a fee officer
   useEffect(() => {

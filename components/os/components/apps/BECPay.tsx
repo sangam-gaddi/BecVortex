@@ -78,9 +78,7 @@ export function BECPay() {
     const [paymentInProgress, setPaymentInProgress] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
 
-    const API_BASE = typeof window !== 'undefined'
-        ? `${window.location.protocol}//${window.location.hostname}:3001`
-        : '';
+    const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
     useEffect(() => { loadData(); }, []);
     // Auto-refresh every 60s

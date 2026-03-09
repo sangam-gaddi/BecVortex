@@ -35,8 +35,7 @@ export function FeeCheckApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
   const check = async () => {
     const id = input.trim();

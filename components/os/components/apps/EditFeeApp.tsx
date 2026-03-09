@@ -43,8 +43,7 @@ export function EditFeeApp() {
   const [newFeeDueDate, setNewFeeDueDate] = useState('');
   const [newFeeDesc, setNewFeeDesc] = useState('');
 
-  const API_BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:3001` : '';
+  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
   useEffect(() => {
     (async () => {
