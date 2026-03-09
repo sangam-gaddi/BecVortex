@@ -112,6 +112,7 @@ export async function searchUserByUSN(usn: string) {
         const userMock = {
             _id: student._id,
             fullName: student.studentName,
+            usn: student.usn,
             department: student.department,
             email: student.email,
             profileImage: student.profilePicture,

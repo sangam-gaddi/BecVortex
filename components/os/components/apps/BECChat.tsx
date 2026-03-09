@@ -5,6 +5,7 @@ import { AppTemplate } from './AppTemplate';
 import { getHierarchyDirectory, searchUserByUSN, createGroup, sendMessage, getUserGroups, getChatHistory, getMyProfile, getUnreadCounts, markMessagesAsRead } from '@/lib/actions/chat.actions';
 import { Search, Plus, Hash, Send, Users, ChevronDown, ChevronRight, MessageSquare, Shield, Info, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { io } from 'socket.io-client';
 
 export function BECChat() {
     // ── Session & Permissions ──
@@ -38,6 +39,7 @@ export function BECChat() {
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const messagesRef = useRef<any[]>([]);
+    const socketRef = useRef<any>(null);
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [unreadList, setUnreadList] = useState<any[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,6 +87,10 @@ export function BECChat() {
                     : `private_${at?.usn || at?.email || at?._id}`;
                 setLastMessages(prev => ({ ...prev, [previewKey]: { text: last.content, time: last.createdAt } }));
             }
+            // Keep marking as read while actively in a private chat
+            if (ct === 'private' && at?._id) {
+                markMessagesAsRead(at._id).catch(() => {});
+            }
         }
     }, []);
 
@@ -98,6 +104,92 @@ export function BECChat() {
         }, 3000);
         return () => clearInterval(interval);
     }, [refreshMessages, refreshUnread]);
+
+    // Socket.IO connection — initialized once currentUser profile is known
+    useEffect(() => {
+        if (!currentUser) return;
+        if (socketRef.current) return;
+
+        const initSocket = async () => {
+            // Wake up the socket server (lazy init via pages/api/socket)
+            await fetch('/api/socket').catch(() => {});
+
+            const sock = io({
+                path: '/api/socket',
+                transports: ['polling'],
+                reconnection: true,
+                reconnectionDelay: 500,
+                reconnectionAttempts: 10,
+            });
+            socketRef.current = sock;
+
+            sock.on('connect', () => {
+                sock.emit('join', { usn: currentUser.usn, name: currentUser.fullName });
+            });
+
+            sock.on('online-users', (usns: string[]) =>
+                setOnlineUsers(usns)
+            );
+            sock.on('user-online', (d: any) =>
+                setOnlineUsers(p => p.includes(d.usn) ? p : [...p, d.usn])
+            );
+            sock.on('user-offline', (d: any) =>
+                setOnlineUsers(p => p.filter(u => u !== d.usn))
+            );
+
+            // Real-time global messages
+            sock.on('new-global-message', (msg: any) => {
+                if (chatTypeRef.current !== 'global') return;
+                setMessages(prev => {
+                    if (prev.some(m => String(m._id) === String(msg._id))) return prev;
+                    return [...prev, { ...msg, content: msg.content || msg.message }];
+                });
+            });
+
+            // Real-time private messages
+            sock.on('new-private-message', (msg: any) => {
+                const senderIdStr = String(msg.senderId?._id || msg.senderId);
+                if (
+                    chatTypeRef.current === 'private' &&
+                    String(activeTargetRef.current?._id) === senderIdStr
+                ) {
+                    setMessages(prev => {
+                        if (prev.some(m => String(m._id) === String(msg._id))) return prev;
+                        return [...prev, { ...msg, content: msg.content || msg.message }];
+                    });
+                    // Mark as read since the user is actively in this chat
+                    markMessagesAsRead(senderIdStr).catch(() => {});
+                } else {
+                    refreshUnread();
+                }
+            });
+
+            // Real-time group messages
+            sock.on('new-group-message', (msg: any) => {
+                if (
+                    chatTypeRef.current === 'group' &&
+                    String(activeTargetRef.current?._id) === String(msg.groupId)
+                ) {
+                    setMessages(prev => {
+                        if (prev.some(m => String(m._id) === String(msg._id))) return prev;
+                        return [...prev, { ...msg, content: msg.content || msg.message }];
+                    });
+                }
+            });
+
+            // Notify when a new group is created by someone else
+            sock.on('group-created', () => {
+                getUserGroups().then(r => { if (r.success) setGroups(r.groups); });
+            });
+        };
+
+        initSocket();
+
+        return () => {
+            socketRef.current?.disconnect();
+            socketRef.current = null;
+        };
+    }, [currentUser, refreshUnread]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -168,9 +260,20 @@ export function BECChat() {
         const res = await sendMessage(payload);
         if (res.success) {
             setInputText('');
+            const outMsg = { ...res.message, content: res.message.content || res.message.message };
             // Optimistic local append
-            setMessages(prev => [...prev, { ...res.message, content: res.message.content || res.message.message }]);
-            // Refresh after 500ms to sync (deduplication in refreshMessages prevents flicker)
+            setMessages(prev => [...prev, outMsg]);
+            // Broadcast to other clients via socket so they get the message in real-time
+            if (socketRef.current?.connected) {
+                const recipientUsn = activeTarget?.usn || activeTarget?.email;
+                socketRef.current.emit('broadcast-message', {
+                    type: chatType,
+                    message: outMsg,
+                    ...(chatType === 'private' && recipientUsn ? { recipientUsn } : {}),
+                    ...(chatType === 'group' && activeTarget ? { groupId: String(activeTarget._id) } : {}),
+                });
+            }
+            // Polling fallback – deduplication in refreshMessages prevents flicker
             setTimeout(refreshMessages, 500);
         } else {
             toast.error(res.error || 'Failed to send');
@@ -214,8 +317,8 @@ export function BECChat() {
             if (groupsRes.success) setGroups(groupsRes.groups);
 
             // Notify other clients to refresh their groups list
-            if (socket) {
-                socket.emit('group-created', { groupId: res.group._id });
+            if (socketRef.current?.connected) {
+                socketRef.current.emit('group-created', { groupId: res.group._id });
             }
 
             setChatType('group');
@@ -318,12 +421,12 @@ export function BECChat() {
                             <HierarchyDrawer title="Faculty" users={directory.FACULTY} icon={Users} color="text-blue-400" />
 
                             {/* Unread Custom Direct Messages from Students/Others */}
-                            {unreadList.length > 0 && (
+                            {unreadList.filter((u: any) => !(chatType === 'private' && activeTarget && u.senderId === String(activeTarget._id))).length > 0 && (
                                 <div className="mt-4 pt-4 border-t border-[#333]">
                                     <div className="text-xs font-bold text-white/40 uppercase tracking-widest pl-1 mb-2">
                                         Unread Direct Messages
                                     </div>
-                                    {unreadList.map((unreadItem: any) => {
+                                    {unreadList.filter((u: any) => !(chatType === 'private' && activeTarget && u.senderId === String(activeTarget._id))).map((unreadItem: any) => {
                                         const isOnline = onlineUsers.includes(unreadItem.profile.usn || unreadItem.profile.email || unreadItem.profile._id);
                                         return (
                                             <button
