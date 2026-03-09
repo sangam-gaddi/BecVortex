@@ -14,15 +14,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // /os → /os/index.html (the static Vite build of BEC VORTEX OS)
-  async rewrites() {
-    return [
-      {
-        source: '/os',
-        destination: '/os/index.html',
-      },
-    ];
-  },
+
 };
 
 module.exports = nextConfig;

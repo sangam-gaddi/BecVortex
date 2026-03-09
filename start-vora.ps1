@@ -5,7 +5,16 @@
 #   1. Start Ollama (if not already running)
 #   2. Start a Cloudflare Quick Tunnel (no login, no domain needed)
 #   3. Capture the public HTTPS URL
-#   4. Save it to your MongoDB so Vercel picks it up instantly
+#   4. Save it to your MongoDB so Render picks it up instantly
+#
+# One-time setup:
+#   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+#      (put cloudflared.exe in C:\cloudflared\)
+#   2. Install Ollama: https://ollama.com  then run: ollama pull qwen3:8b
+#   3. Set these Windows User environment variables:
+#        VORA_APP_URL      = https://bec-vortex-os.onrender.com
+#        VORA_CONFIG_SECRET = <the value Render generated — copy from Render dashboard>
+#        OLLAMA_API_KEY    = (optional — only if you lock down Ollama)
 # ============================================================
 
 $CLOUDFLARED  = "C:\cloudflared\cloudflared.exe"
@@ -15,7 +24,7 @@ $CFG_SECRET   = [System.Environment]::GetEnvironmentVariable("VORA_CONFIG_SECRET
 # Read deployed app URL from env or prompt
 $APP_URL = $env:VORA_APP_URL
 if (-not $APP_URL) {
-    $APP_URL = Read-Host "Enter your deployed app URL (e.g. https://your-app.vercel.app)"
+    $APP_URL = Read-Host "Enter your Render app URL (e.g. https://bec-vortex-os.onrender.com)"
 }
 $APP_URL = $APP_URL.TrimEnd("/")
 
@@ -101,7 +110,7 @@ try {
         -TimeoutSec 15
     Write-Host "      Server updated. OK" -ForegroundColor Green
 } catch {
-    Write-Host "      WARNING: Could not notify server. VORA will work locally but Vercel may use stale URL." -ForegroundColor DarkYellow
+    Write-Host "      WARNING: Could not notify server. VORA will work locally but Render may use stale URL." -ForegroundColor DarkYellow
     Write-Host "      Endpoint: $setUrlEndpoint" -ForegroundColor DarkYellow
 }
 

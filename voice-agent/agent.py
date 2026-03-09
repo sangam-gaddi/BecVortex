@@ -56,10 +56,12 @@ logger.info(f"CARTESIA_API_KEY : {'SET' if os.getenv('CARTESIA_API_KEY') else 'N
 # Context builders — one per role
 # ──────────────────────────────────────────────────────────────
 
-ABOUT_BEC_VORTEX = """
+_APP_URL = os.getenv("NEXT_PUBLIC_APP_URL", "https://bec-vortex-os.onrender.com")
+
+ABOUT_BEC_VORTEX = f"""
 ABOUT BEC VORTEX OS:
 BEC Vortex is a macOS-inspired campus OS for Bangalore Engineering College (BEC).
-It runs at http://localhost:3001 in a browser.
+It runs at {_APP_URL} in a browser.
 
 Key features of the OS:
 - Desktop with draggable app icons (left side of screen)

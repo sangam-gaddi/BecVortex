@@ -1,4 +1,0 @@
-C:\Users\sanga\Desktop\homepage-preview\components\os\components\Desktop.tsx
-C:\Users\sanga\Desktop\homepage-preview\components\os\components\Game\GameScreenLayout.tsx
-C:\Users\sanga\Desktop\homepage-preview\components\os\services\sound.ts
-C:\Users\sanga\Desktop\homepage-preview\components\os\utils\fileSystemUtils.ts

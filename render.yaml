@@ -1,0 +1,49 @@
+services:
+  # ──────────────────────────────────────────────────────────────────────────
+  # SERVICE 1: BEC Vortex OS — Next.js Web App
+  # ──────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: bec-vortex-os
+    runtime: node
+    plan: free
+    region: singapore          # closest to India
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/auth/me
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+
+      # ── Database ──────────────────────────────────────────────────────────
+      - key: MONGODB_URI
+        sync: false            # set manually in Render dashboard
+
+      # ── Auth ──────────────────────────────────────────────────────────────
+      - key: JWT_SECRET
+        generateValue: true    # Render auto-generates a secure random value
+
+      # ── LiveKit (for ARIA voice assistant) ────────────────────────────────
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+
+      # ── VORA / Local LLM (Ollama via Cloudflare Tunnel) ───────────────────
+      # VORA_AGENT_URL is stored/updated in MongoDB dynamically via start-vora.ps1
+      # This env var is a fallback only — real URL lives in MongoDB SystemConfig
+      - key: VORA_AGENT_URL
+        value: ""              # leave blank; MongoDB value takes precedence
+      - key: VORA_MODEL
+        value: "qwen3:8b"
+      - key: VORA_CONFIG_SECRET
+        generateValue: true    # auto-generated; copy this value into start-vora.ps1
+      - key: OLLAMA_API_KEY
+        value: ""              # optional — only if you password-protect Ollama
+
+      # ── Next.js public URL (used by agent.py for callbacks) ───────────────
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false            # set this to https://bec-vortex-os.onrender.com
