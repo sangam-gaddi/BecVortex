@@ -1,4 +1,4 @@
-![BEC Vortex Banner](readme%20images/main%20starting%20banner.png)
+![BEC Vortex Banner](readme%20images/main%20starting%20banner%20new.png)
 
 <div align="center">
 
