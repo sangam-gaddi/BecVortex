@@ -1,3 +1,5 @@
+![BEC Vortex Banner](readme%20images/main%20starting%20banner.png)
+
 <div align="center">
 
 # 🖥️ BEC Vortex OS
@@ -58,6 +60,8 @@ It is not a dashboard. It is not a portal. It is an **OS**.
 - Real-time AI assistant (VORA) and live voice agent (ARIA)
 - Real-time college-wide chat with Socket.IO
 
+![Homepage](readme%20images/homepage.png)
+
 ---
 
 ## The OS Interface
@@ -85,6 +89,12 @@ It is not a dashboard. It is not a portal. It is an **OS**.
 │  [📁] [🪪] [🌐] [⊞] [>_] [⚙️] [🗑️]                    [🎙️ ARIA]    │  ← Dock
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
+![Desktop View 1](readme%20images/desktop%201.png)
+
+![Desktop View 2](readme%20images/desktop%202.png)
+
+![Desktop View 3](readme%20images/desktop%203.png)
 
 ---
 
