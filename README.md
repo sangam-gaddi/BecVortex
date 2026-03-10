@@ -21,28 +21,36 @@
 
 ## 📖 Table of Contents
 
-- [What is BEC Vortex?](#what-is-bec-vortex)
-- [The OS Interface](#the-os-interface)
-- [Role-Based Hierarchy](#role-based-hierarchy)
-- [Applications](#applications)
-  - [Student Apps](#student-apps)
-  - [Faculty Apps](#faculty-apps)
-  - [Officer Apps](#officer-apps)
-  - [HOD Apps](#hod-apps)
-  - [Master/Admin Apps](#masteradmin-apps)
-- [AI Systems](#ai-systems)
-  - [VORA — Text AI Assistant](#vora--text-ai-assistant)
-  - [ARIA — Voice AI Assistant](#aria--voice-ai-assistant)
-  - [Vision OCR — Answer Sheet Scanner](#vision-ocr--answer-sheet-scanner)
-- [Payment System](#payment-system)
-- [BEC Chat — Real-Time Messaging](#bec-chat--real-time-messaging)
-- [Authentication & Security](#authentication--security)
-- [Database Schema](#database-schema)
-- [API Routes](#api-routes)
-- [Tech Stack](#tech-stack)
-- [Environment Variables](#environment-variables)
-- [Local Development](#local-development)
-- [Deployment](#deployment)
+<ul>
+  <li><a href="#what-is-bec-vortex"><font color="yellow">What is BEC Vortex?</font></a></li>
+  <li><a href="#the-os-interface"><font color="yellow">The OS Interface</font></a></li>
+  <li><a href="#role-based-hierarchy"><font color="yellow">Role-Based Hierarchy</font></a></li>
+  <li><a href="#applications"><font color="yellow">Applications</font></a>
+    <ul>
+      <li><a href="#student-apps"><font color="yellow">Student Apps</font></a></li>
+      <li><a href="#faculty-apps"><font color="yellow">Faculty Apps</font></a></li>
+      <li><a href="#officer-apps"><font color="yellow">Officer Apps</font></a></li>
+      <li><a href="#hod-apps"><font color="yellow">HOD Apps</font></a></li>
+      <li><a href="#masteradmin-apps"><font color="yellow">Master/Admin Apps</font></a></li>
+    </ul>
+  </li>
+  <li><a href="#ai-systems"><font color="yellow">AI Systems</font></a>
+    <ul>
+      <li><a href="#vora--text-ai-assistant"><font color="yellow">VORA — Text AI Assistant</font></a></li>
+      <li><a href="#aria--voice-ai-assistant"><font color="yellow">ARIA — Voice AI Assistant</font></a></li>
+      <li><a href="#vision-ocr--answer-sheet-scanner"><font color="yellow">Vision OCR — Answer Sheet Scanner</font></a></li>
+    </ul>
+  </li>
+  <li><a href="#payment-system"><font color="yellow">Payment System</font></a></li>
+  <li><a href="#bec-chat--real-time-messaging"><font color="yellow">BEC Chat — Real-Time Messaging</font></a></li>
+  <li><a href="#authentication--security"><font color="yellow">Authentication &amp; Security</font></a></li>
+  <li><a href="#database-schema"><font color="yellow">Database Schema</font></a></li>
+  <li><a href="#api-routes"><font color="yellow">API Routes</font></a></li>
+  <li><a href="#tech-stack"><font color="yellow">Tech Stack</font></a></li>
+  <li><a href="#environment-variables"><font color="yellow">Environment Variables</font></a></li>
+  <li><a href="#local-development"><font color="yellow">Local Development</font></a></li>
+  <li><a href="#deployment"><font color="yellow">Deployment</font></a></li>
+</ul>
 
 ---
 
