@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 🖥️ BEC Vortex OS
+#  BEC Vortex OS
 
 ### A full-stack, macOS-inspired campus management operating system for Basaveshwar Engineering College, Bagalkot
 
