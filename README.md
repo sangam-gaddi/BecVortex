@@ -2,9 +2,9 @@
 
 <div align="center">
 
-#  BEC Vortex OS
 
-### A full-stack, macOS-inspired campus management operating system for Basaveshwar Engineering College, Bagalkot
+
+### A full-stack, ARCH LINUX-inspired campus management operating system for Basaveshwar Engineering College, Bagalkot
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
