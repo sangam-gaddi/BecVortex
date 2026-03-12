@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Hero from '@/components/Hero';
 import About from '@/components/About';
+import MainThemeSection from '@/components/MainThemeSection';
 import Navbar from '@/components/Navbar';
 import Features from '@/components/Features';
 import Story from '@/components/Story';
@@ -20,6 +21,7 @@ export default function HomePage() {
             <Navbar onFeeStructureClick={() => setShowFeeStructure(true)} />
             <Hero />
             <About />
+            <MainThemeSection />
             <Features />
             <Story onFeeStructureClick={() => setShowFeeStructure(true)} />
             <CampusScroll />

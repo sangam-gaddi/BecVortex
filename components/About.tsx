@@ -4,7 +4,6 @@ import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/all';
-import AnimatedTitle from './AnimatedTitle';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -216,6 +215,9 @@ const LoginCard = ({ cardId, number, role, roleKey, color, textColor, delay, ide
 };
 
 const About = () => {
+  const headingWords = ['Login', 'to', 'BecVortex', '|', 'The', 'Ultimate', 'Unified', 'Ecosystem'];
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
   useGSAP(() => {
     gsap.fromTo(
       '.bec-panel',
@@ -232,6 +234,26 @@ const About = () => {
         },
       }
     );
+
+    const words = headingRef.current?.querySelectorAll('.bec-about-animated-word');
+    if (words && words.length) {
+      gsap.set(words, { y: 32, opacity: 0 });
+
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: headingRef.current,
+          start: 'top 92%',
+          end: 'bottom 70%',
+          toggleActions: 'play none none reset',
+        },
+      }).to(words, {
+        y: 0,
+        opacity: 1,
+        duration: 0.75,
+        stagger: 0.06,
+        ease: 'power3.out',
+      });
+    }
   });
 
   const cards: LoginCardProps[] = [
@@ -247,11 +269,18 @@ const About = () => {
     <div id="about">
       {/* Heading */}
       <div className="bec-about-header">
-        <p className="bec-about-eyebrow">Welcome to BecBillDESK</p>
-        <AnimatedTitle
-          title="l<b>o</b>gin to the world's <br /> largest shared p<b>a</b>yment"
-          containerClass="mt-3 !text-black text-center"
-        />
+        <h2
+          ref={headingRef}
+          className="mt-3 text-center text-black font-black leading-[0.85] tracking-[-0.02em] normal-case text-[clamp(2rem,7vw,8rem)]"
+          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+        >
+          {headingWords.map((word, idx) => (
+            <span key={`${word}-${idx}`} className="bec-about-animated-word inline-block">
+              {word}
+              {idx < headingWords.length - 1 ? '\u00A0' : ''}
+            </span>
+          ))}
+        </h2>
       </div>
 
       {/* 6-panel card row */}
