@@ -24,7 +24,7 @@ const OPENROUTER_MODELS = [
 
 interface Props {
   /** Called when VORA issues an open_app command. Matches OS.tsx `openWindow`. */
-  onOpenApp?: (appId: string) => void;
+  onOpenApp?: (appId: string, data?: Record<string, unknown>) => void;
   /** Called when VORA issues a close_app command. Matches OS.tsx `closeWindow`. */
   onCloseApp?: (appId: string) => void;
 }
@@ -52,7 +52,7 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
   const handleOsCommand = useCallback(
     (cmd: VoraOsCommand) => {
       if (cmd.type === 'open_app' && onOpenApp && cmd.appId) {
-        onOpenApp(cmd.appId);
+        onOpenApp(cmd.appId, cmd.data);
       } else if (cmd.type === 'close_app' && onCloseApp && cmd.appId) {
         onCloseApp(cmd.appId);
       }
@@ -60,7 +60,7 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
     [onOpenApp, onCloseApp]
   );
 
-  const { messages, status, isTyping, sendMessage, clearHistory } = useVORA({
+  const { messages, status, isTyping, sendMessage, clearHistory, stopGenerating } = useVORA({
     onOsCommand: handleOsCommand,
     provider:    activeProvider,
     model:       activeProvider === 'openrouter' ? selectedModel : undefined,
@@ -249,13 +249,20 @@ export function VORAIsland({ onOpenApp, onCloseApp }: Props) {
                 className="flex-1 bg-slate-800 text-slate-100 text-xs placeholder-slate-600 rounded-xl px-3 py-2 border border-slate-700 outline-none focus:border-violet-600/60 transition-colors disabled:opacity-40"
               />
               <button
-                onClick={handleSend}
-                disabled={!input.trim() || isTyping}
-                className="w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
+                onClick={isTyping ? stopGenerating : handleSend}
+                disabled={isTyping ? false : !input.trim()}
+                className={`w-8 h-8 rounded-xl disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0 ${isTyping ? 'bg-rose-600 hover:bg-rose-500' : 'bg-violet-600 hover:bg-violet-500'}`}
+                title={isTyping ? 'Stop VORA' : 'Send message'}
               >
-                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-white" fill="currentColor">
-                  <path d="M14.5 8L2 14l2.5-6L2 2l12.5 6z" />
-                </svg>
+                {isTyping ? (
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-white" fill="currentColor">
+                    <rect x="3" y="3" width="10" height="10" rx="1.5" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-white" fill="currentColor">
+                    <path d="M14.5 8L2 14l2.5-6L2 2l12.5 6z" />
+                  </svg>
+                )}
               </button>
             </div>
           </motion.div>

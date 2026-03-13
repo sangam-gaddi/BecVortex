@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, memo, useRef, forwardRef } from 'react';
+import React, { useState, useEffect, memo, useRef, forwardRef, useCallback } from 'react';
 import { useAppContext } from '@/components/os/components/AppContext';
 
 export interface DesktopIcon {
@@ -75,8 +75,22 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
   } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  const getStorageKey = useCallback(
+    (role: string) => `bec-vortex-icons-${role}-${isMobileView ? 'mobile' : 'desktop'}`,
+    [isMobileView]
+  );
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const updateViewport = () => setIsMobileView(window.innerWidth < 640);
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, [mounted]);
 
   // Detect current user role from sessionStorage
   useEffect(() => {
@@ -88,7 +102,10 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
       setCurrentRole(prev => {
         if (prev !== effectiveRole) {
           // Role changed: reset positions so new role gets fresh layout
-          localStorage.removeItem(`bec-vortex-icons-${effectiveRole}`);
+          if (effectiveRole) {
+            localStorage.removeItem(`bec-vortex-icons-${effectiveRole}-desktop`);
+            localStorage.removeItem(`bec-vortex-icons-${effectiveRole}-mobile`);
+          }
         }
         return effectiveRole;
       });
@@ -108,7 +125,7 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
   // Initialise positions on right side (one column)
   useEffect(() => {
     if (!mounted || myApps.length === 0 || !currentRole) return;
-    const storageKey = `bec-vortex-icons-${currentRole}`;
+    const storageKey = getStorageKey(currentRole);
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
@@ -118,7 +135,7 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
       } catch { /* ignore */ }
     }
     const winW = window.innerWidth;
-    const startX = 24;
+    const startX = isMobileView ? Math.max(12, winW - ICON_W - 24) : 24;
     const startY = 60;
     const pos: Record<string, { x: number; y: number }> = {};
     myApps.forEach((app, i) => {
@@ -126,11 +143,11 @@ function BECVortexDesktopIcons({ onOpenApp }: { onOpenApp: (type: string) => voi
     });
     setPositions(pos);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, myApps.length, currentRole]);
+  }, [mounted, myApps.length, currentRole, isMobileView, getStorageKey]);
 
   const savePos = (pos: Record<string, { x: number; y: number }>) => {
     setPositions(pos);
-    if (currentRole) localStorage.setItem(`bec-vortex-icons-${currentRole}`, JSON.stringify(pos));
+    if (currentRole) localStorage.setItem(getStorageKey(currentRole), JSON.stringify(pos));
   };
 
   const handlePointerDown = (e: React.PointerEvent, appId: string) => {

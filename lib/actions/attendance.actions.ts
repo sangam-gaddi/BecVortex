@@ -3,7 +3,6 @@
 import { connectToDatabase } from '@/database/mongoose';
 import AttendanceRecord from '@/database/models/AttendanceRecord';
 import Student from '@/database/models/Student';
-import User from '@/database/models/User';
 import { getSession } from '../auth/session';
 import Subject from '@/database/models/Subject';
 
@@ -32,7 +31,6 @@ export async function getStudentsForAttendance(subjectCode: string, semester: nu
 
         let studentQuery: any = {
             semester: semester.toString(),
-            isRegistered: true
         };
 
         // Enforce department integrity: Faculty can only see students from their own department
@@ -187,7 +185,6 @@ export async function getOverallAttendanceBook(subjectCode: string, semester: nu
         // Get enrolled students ordered by USN
         const enrolledStudents = await Student.find({
             semester: semester.toString(),
-            isRegistered: true,
             department: session.department,
             $or: [
                 { registeredSubjects: upperCode },

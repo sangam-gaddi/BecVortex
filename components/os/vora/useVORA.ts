@@ -20,6 +20,7 @@ export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOpti
   const historyRef  = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const providerRef = useRef<VoraProvider>(provider);
   const modelRef    = useRef<string | undefined>(model);
+  const abortRef    = useRef<AbortController | null>(null);
   useEffect(() => { providerRef.current = provider; }, [provider]);
   useEffect(() => { modelRef.current = model; }, [model]);
 
@@ -67,12 +68,15 @@ export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOpti
       setMessages((prev) => [...prev, loadingMsg]);
       setIsTyping(true);
       setStatus('thinking');
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       try {
         const res = await fetch('/api/agent/chat', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ messages: historyRef.current, provider: providerRef.current, model: modelRef.current }),
+          signal:  controller.signal,
         });
 
         const data = await res.json();
@@ -102,6 +106,18 @@ export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOpti
 
         setStatus('online');
       } catch (err) {
+        const isAbort = err instanceof DOMException && err.name === 'AbortError';
+        if (isAbort) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === loadingId
+                ? { ...m, content: 'Stopped by user.', loading: false, timestamp: new Date() }
+                : m
+            )
+          );
+          setStatus('online');
+          return;
+        }
         const errText = err instanceof Error ? err.message : 'Something went wrong.';
         setMessages((prev) =>
           prev.map((m) =>
@@ -112,16 +128,22 @@ export function useVORA({ onOsCommand, provider = 'ollama', model }: UseVORAOpti
         );
         setStatus('error');
       } finally {
+        abortRef.current = null;
         setIsTyping(false);
       }
     },
     [isTyping, onOsCommand]
   );
 
+  const stopGenerating = useCallback(() => {
+    if (!isTyping) return;
+    abortRef.current?.abort();
+  }, [isTyping]);
+
   const clearHistory = useCallback(() => {
     setMessages([]);
     historyRef.current = [];
   }, []);
 
-  return { messages, status, isTyping, sendMessage, clearHistory };
+  return { messages, status, isTyping, sendMessage, clearHistory, stopGenerating };
 }

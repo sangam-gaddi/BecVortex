@@ -9,9 +9,13 @@ import { useRouter } from 'next/navigation';
 import Button from './Button';
 
 const navItems = [
+  { name: 'Home', id: 'home' },
+  { name: 'Login Cards', id: 'about' },
+  { name: 'Workflow', id: 'workflow' },
   { name: 'Payment Methods', id: 'features' },
+  { name: 'Live Notices', id: 'story' },
+  { name: 'Campus', id: 'campus' },
   { name: 'Fee Structure', id: 'fee-structure' },
-  { name: 'Login', id: 'about' },
   { name: 'Contact', id: 'contact' },
 ];
 
@@ -65,16 +69,11 @@ const Navbar = ({ onFeeStructureClick }: { onFeeStructureClick?: () => void }) =
         <nav className="flex size-full items-center justify-between p-4">
           <div className="flex items-center gap-7">
             <Button
-              id="notification-button"
-              title="Notifications"
+              id="signup-button"
+              title="Sign Up"
               rightIcon={<TiLocationArrow />}
-              containerClass="bg-blue-50 md:flex hidden items-center justify-center gap-1"
-              onClick={() => {
-                const storySection = document.getElementById('story');
-                if (storySection) {
-                  storySection.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
+              containerClass="bg-emerald-100 text-emerald-900 md:flex hidden items-center justify-center gap-1 border border-emerald-300/60"
+              onClick={() => router.push('/signup')}
             />
           </div>
 
@@ -86,21 +85,6 @@ const Navbar = ({ onFeeStructureClick }: { onFeeStructureClick?: () => void }) =
                 </button>
               ))}
             </div>
-
-            {/* BEC VORTEX OS Launch Button — remove when ready */}
-            <a
-              href="/os"
-              className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-white"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-                boxShadow: '0 0 12px rgba(124,58,237,0.5)',
-                transition: 'box-shadow 0.2s ease',
-              }}
-              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.boxShadow = '0 0 22px rgba(124,58,237,0.85)')}
-              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.boxShadow = '0 0 12px rgba(124,58,237,0.5)')}
-            >
-              <span>⚡</span> BEC VORTEX OS
-            </a>
 
             <button onClick={toggleAudioIndicator} className="flex items-center space-x-0.5">
               <audio ref={audioElementRef} className="hidden" src="/audio/loop.mp3" loop />

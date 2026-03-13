@@ -46,6 +46,7 @@ export interface VoraChatMessage {
 export interface VoraOsCommand {
   type: 'open_app' | 'close_app';
   appId: string;
+  data?: Record<string, unknown>;
 }
 
 /** Decoded session passed around the VORA layer */

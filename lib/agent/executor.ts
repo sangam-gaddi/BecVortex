@@ -10,6 +10,8 @@ import { canUseTool } from './rbac';
 import { connectToDatabase } from '@/database/mongoose';
 import Student from '@/database/models/Student';
 import User from '@/database/models/User';
+import Payment from '@/database/models/Payment';
+import CustomFee from '@/database/models/CustomFee';
 import { canCreateRole, ROLES, DEPARTMENTS } from '@/lib/auth/rbac-constants';
 import { hashPassword } from '@/lib/auth/password';
 import type { UserRole, Department } from '@/lib/auth/rbac-constants';
@@ -31,12 +33,63 @@ import {
 import { registerStudent }                       from '@/lib/actions/admission.actions';
 import { bulkAssignSubjectsToCleanStudents }      from '@/lib/actions/subject.actions';
 
+const STANDARD_FEE_MAP: Record<string, { name: string; amount: number }> = {
+  tuition: { name: 'Tuition Fee', amount: 75000 },
+  development: { name: 'Development Fee', amount: 15000 },
+  hostel: { name: 'Hostel Fee', amount: 45000 },
+  examination: { name: 'Examination Fee', amount: 5000 },
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function resolveUsnToId(usn: string): Promise<string | null> {
   await connectToDatabase();
   const student = await Student.findOne({ usn: usn.toUpperCase() }).select('_id').lean();
   return student ? (student as any)._id.toString() : null;
+}
+
+async function getCurrentStudentBySession(session: VoraSession) {
+  await connectToDatabase();
+  const student = await Student.findOne({ usn: session.usn.toUpperCase() }).lean();
+  return student as any;
+}
+
+function matchReceipt(payment: any, token: string): boolean {
+  const query = token.toUpperCase();
+  const queryCompact = query.replace(/[^A-Z0-9]/g, '');
+  const idPrefix = payment._id?.toString?.().substring(0, 8)?.toUpperCase() ?? '';
+  const candidates = [
+    payment._id?.toString?.() ?? '',
+    idPrefix,
+    payment.transactionHash ?? '',
+    payment.challanId ?? '',
+    payment.bankReferenceId ?? '',
+    payment.receiptNo ?? '',
+    payment.receiptData?.receiptNo ?? '',
+    payment.reference ?? '',
+  ].map((v) => String(v).toUpperCase());
+  return candidates.some((v) => {
+    const compact = v.replace(/[^A-Z0-9]/g, '');
+    return v === query || v.includes(query) || compact === queryCompact || compact.includes(queryCompact);
+  });
+}
+
+function normalizeAppId(appId: string): string {
+  const raw = String(appId || '').trim().toLowerCase();
+  if (!raw) return raw;
+
+  const aliases: Record<string, string> = {
+    'becbilldesk': 'bec-pay',
+    'billdesk': 'bec-pay',
+    'feereceiptdownload': 'download-receipts',
+    'fee-receipt-download': 'download-receipts',
+    'fee-receipt-downloader': 'download-receipts',
+    'fee-receipt-downloader-app': 'download-receipts',
+    'my-receipts': 'download-receipts',
+    'receipt-download': 'download-receipts',
+  };
+
+  return aliases[raw] ?? raw;
 }
 
 // ── Main executor ─────────────────────────────────────────────────────────────
@@ -83,6 +136,7 @@ export async function executeToolCall(
             ...result,
             usn: (args.studentUsn as string).toUpperCase(),
             semesterUsed: resolvedSemester,
+            osCommand: { type: 'open_app', appId: 'marks-upload' },
           },
           error: (result as any).error,
         };
@@ -104,7 +158,14 @@ export async function executeToolCall(
           timeSlot:         args.timeSlot as string,
           absentStudentIds,
         });
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'attendance-upload' },
+          },
+          error: result.error,
+        };
       }
 
       // ── Registration ────────────────────────────────────────────
@@ -138,7 +199,175 @@ export async function executeToolCall(
           semester:          args.semester as number,
           branch:            args.branch as string,
         });
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'course-registration' },
+          },
+          error: result.error,
+        };
+      }
+
+      // ── Student context / fees / receipts ──────────────────────
+      case 'get_my_student_context': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+        return {
+          success: true,
+          data: {
+            usn: student.usn,
+            studentName: student.studentName,
+            department: student.department,
+            semester: student.semester,
+            currentSemester: student.currentSemester,
+            paymentCategory: student.paymentCategory,
+            registeredSubjects: student.registeredSubjects ?? [],
+            backlogs: student.backlogs ?? [],
+            paidFees: student.paidFees ?? [],
+            osCommand: { type: 'open_app', appId: 'bec-portal' },
+          },
+        };
+      }
+
+      case 'get_my_fee_overview': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+
+        const paidFeeIds = new Set<string>((student.paidFees ?? []).map((f: string) => f.toLowerCase()));
+        const standardFees = Object.entries(STANDARD_FEE_MAP).map(([id, def]) => ({
+          id,
+          name: def.name,
+          amount: def.amount,
+          status: paidFeeIds.has(id) ? 'paid' : 'pending',
+        }));
+
+        const customFees = await CustomFee.find({ studentUsn: student.usn }).sort({ createdAt: -1 }).lean();
+        const payments = await Payment.find({ usn: student.usn }).sort({ createdAt: -1 }).limit(20).lean();
+
+        return {
+          success: true,
+          data: {
+            usn: student.usn,
+            standardFees,
+            customFees,
+            recentPayments: payments,
+            osCommand: { type: 'open_app', appId: 'bec-pay' },
+          },
+        };
+      }
+
+      case 'calculate_my_selected_fees': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+
+        const feeIds = ((args.feeIds as string[]) ?? []).map((f) => f.toLowerCase());
+        const invalid = feeIds.filter((id) => !STANDARD_FEE_MAP[id]);
+        if (invalid.length > 0) {
+          return { success: false, error: `Invalid fee IDs: ${invalid.join(', ')}.` };
+        }
+
+        const selected = feeIds.map((id) => ({ id, ...STANDARD_FEE_MAP[id] }));
+        const total = selected.reduce((sum, f) => sum + f.amount, 0);
+        const paidSet = new Set<string>((student.paidFees ?? []).map((f: string) => f.toLowerCase()));
+        const alreadyPaid = selected.filter((f) => paidSet.has(f.id)).map((f) => f.id);
+
+        return {
+          success: true,
+          data: {
+            feeIds,
+            selected,
+            total,
+            alreadyPaid,
+            osCommand: { type: 'open_app', appId: 'bec-pay' },
+          },
+        };
+      }
+
+      case 'open_payment_for_selected_fees': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+
+        const feeIds = ((args.feeIds as string[]) ?? []).map((f) => f.toLowerCase());
+        if (feeIds.length === 0) return { success: false, error: 'At least one fee ID is required.' };
+
+        const invalid = feeIds.filter((id) => !STANDARD_FEE_MAP[id]);
+        if (invalid.length > 0) {
+          return { success: false, error: `Invalid fee IDs: ${invalid.join(', ')}.` };
+        }
+
+        const total = feeIds.reduce((sum, id) => sum + STANDARD_FEE_MAP[id].amount, 0);
+        return {
+          success: true,
+          data: {
+            usn: student.usn,
+            feeIds,
+            total,
+            message: 'Payment app opened. Continue with payment flow.',
+            osCommand: { type: 'open_app', appId: 'bec-pay' },
+          },
+        };
+      }
+
+      case 'verify_my_fee_receipt': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+
+        const token = String(args.receiptId || args.receipt_id || '').trim();
+        if (!token) return { success: false, error: 'receiptId is required.' };
+
+        const usnRegex = new RegExp(`^${String(student.usn).trim()}$`, 'i');
+        const payments = await Payment.find({ usn: usnRegex }).sort({ createdAt: -1 }).lean();
+        const payment = (payments as any[]).find((p) => matchReceipt(p, token));
+
+        if (!payment) {
+          return { success: false, error: `No receipt/payment found for identifier "${token}" in your account.` };
+        }
+
+        return {
+          success: true,
+          data: {
+            paymentId: payment._id?.toString?.(),
+            receiptNo: payment._id?.toString?.().substring(0, 8)?.toUpperCase?.(),
+            amount: payment.amount,
+            status: payment.status,
+            paymentMethod: payment.paymentMethod,
+            feeIds: payment.feeIds,
+            createdAt: payment.createdAt,
+            reference: payment.transactionHash || payment.challanId || payment.bankReferenceId || payment._id?.toString?.(),
+            osCommand: { type: 'open_app', appId: 'fee-check' },
+          },
+        };
+      }
+
+      case 'download_my_fee_receipt': {
+        const student = await getCurrentStudentBySession(session);
+        if (!student) return { success: false, error: 'Student profile not found for current session.' };
+
+        const token = String(args.receiptId || args.receipt_id || '').trim();
+        if (!token) return { success: false, error: 'receiptId is required.' };
+
+        const usnRegex = new RegExp(`^${String(student.usn).trim()}$`, 'i');
+        const payments = await Payment.find({ usn: usnRegex }).sort({ createdAt: -1 }).lean();
+        const payment = (payments as any[]).find((p) => matchReceipt(p, token));
+
+        if (!payment) {
+          return { success: false, error: `No receipt/payment found for identifier "${token}" in your account.` };
+        }
+
+        return {
+          success: true,
+          data: {
+            paymentId: payment._id?.toString?.(),
+            receiptNo: payment._id?.toString?.().substring(0, 8)?.toUpperCase?.(),
+            amount: payment.amount,
+            paymentMethod: payment.paymentMethod,
+            createdAt: payment.createdAt,
+            feeIds: payment.feeIds,
+            message: 'Receipt located. Opening My Receipts app for download.',
+            osCommand: { type: 'open_app', appId: 'download-receipts' },
+          },
+        };
       }
 
       // ── Faculty management ──────────────────────────────────────
@@ -154,17 +383,38 @@ export async function executeToolCall(
           args.semester    as number,
           args.section     as string | undefined
         );
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'teaching-assigner' },
+          },
+          error: result.error,
+        };
       }
 
       case 'assign_cr': {
         const result = await assignCR(args.studentId as string, args.semester as number);
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'cr-assigner' },
+          },
+          error: result.error,
+        };
       }
 
       case 'revoke_cr': {
         const result = await removeCR(args.studentId as string);
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'cr-assigner' },
+          },
+          error: result.error,
+        };
       }
 
       // ── Admission ───────────────────────────────────────────────
@@ -181,13 +431,27 @@ export async function executeToolCall(
           email:           args.email           as string | undefined,
           phone:           args.phone           as string | undefined,
         });
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'admit-app' },
+          },
+          error: result.error,
+        };
       }
 
       // ── Subjects ────────────────────────────────────────────────
       case 'bulk_assign_subjects': {
         const result = await bulkAssignSubjectsToCleanStudents(args.targetSemester as number);
-        return { success: result.success, data: result, error: result.error };
+        return {
+          success: result.success,
+          data: {
+            ...result,
+            osCommand: { type: 'open_app', appId: 'subject-assigner' },
+          },
+          error: result.error,
+        };
       }
 
       // ── Account creation (inline — avoids HTTP round-trip) ──────
@@ -241,15 +505,17 @@ export async function executeToolCall(
             userId:   newUser._id.toString(),
             username: newUser.username,
             reminder: 'Please ask the user to change their password after first login.',
+            osCommand: { type: 'open_app', appId: 'account-manager' },
           },
         };
       }
 
       // ── OS commands — handled client-side ──────────────────────
       case 'open_app': {
+        const appId = normalizeAppId(String(args.appId as string));
         return {
           success: true,
-          data: { osCommand: { type: 'open_app', appId: args.appId as string } },
+          data: { osCommand: { type: 'open_app', appId } },
         };
       }
 

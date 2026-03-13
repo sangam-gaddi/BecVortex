@@ -433,7 +433,7 @@ export default function OS() {
                 />
 
                 <VORAIsland
-                  onOpenApp={openWindow}
+                                    onOpenApp={(appId, data) => openWindow(appId, data as any)}
                   onCloseApp={(appId) => {
                     const match = windows.find(w => w.type === appId);
                     if (match) closeWindow(match.id);

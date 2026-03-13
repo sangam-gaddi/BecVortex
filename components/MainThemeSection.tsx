@@ -262,7 +262,7 @@ const MainThemeSection = () => {
   );
 
   return (
-    <section ref={rootRef} className="ma-root" aria-label="BEC Vortex main animation theme">
+    <section id="workflow" ref={rootRef} className="ma-root" aria-label="BEC Vortex main animation theme">
       <section className="ma-hero">
         <div className="ma-home-services-top-bar">
           <div className="ma-container">
@@ -501,7 +501,11 @@ const MainThemeSection = () => {
           </div>
           <div className="ma-container">
             <div className="ma-spotlight-mask-header">
-              <h3>Role-Aware Desktop Workflows with Realtime Ops and AI Assistance</h3>
+              <h3>
+                <span className="ma-spotlight-hook">VORTEX</span>
+                <br />
+                Role-Aware Campus OS
+              </h3>
             </div>
           </div>
         </div>
@@ -770,7 +774,16 @@ const MainThemeSection = () => {
           width: 100%; height: 100%; object-fit: cover; object-position: center;
         }
         .ma-spotlight-mask-header {
-          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 45%; text-align: center; color: var(--ma-base-100);
+          position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%); width: 38%; text-align: center; color: var(--ma-base-100);
+        }
+        .ma-spotlight-mask-header h3 {
+          font-size: clamp(2.2rem, 5.4vw, 4.8rem);
+          line-height: 0.9;
+          letter-spacing: -0.01em;
+        }
+        .ma-spotlight-hook {
+          color: #ffe08a;
+          text-shadow: 0 3px 20px rgba(0, 0, 0, 0.35);
         }
         .ma-home-spotlight-top-bar, .ma-home-spotlight-bottom-bar {
           position: absolute; left: 0; width: 100%;
@@ -838,6 +851,8 @@ const MainThemeSection = () => {
           .ma-flip-card-back { transform: none !important; position: relative; }
 
           .ma-spotlight-mask-header, .ma-spotlight-intro-header { width: 90%; text-align: center; }
+          .ma-spotlight-mask-header { top: 30%; }
+          .ma-spotlight-mask-header h3 { font-size: clamp(2rem, 10.5vw, 3.6rem); line-height: 0.92; }
           .ma-home-spotlight-images { left: -75vw; width: 250vw; }
           .ma-home-spotlight-images-row { gap: 1rem; }
 

@@ -91,6 +91,15 @@ export default function SignupPage() {
           duration: 2000,
         });
 
+        // Seed OS RBAC context for first-time signup flow.
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('bec-vortex-role', 'STUDENT');
+          sessionStorage.setItem('bec-vortex-department', '');
+          sessionStorage.setItem('bec-vortex-userType', 'student');
+          sessionStorage.setItem('bec-vortex-fullName', data.student.studentName || 'Student');
+          sessionStorage.setItem('bec-vortex-username', data.student.usn || usn.toUpperCase());
+        }
+
         // Wait a moment for the toast to show, then redirect
         setTimeout(() => {
           router.push('/os');

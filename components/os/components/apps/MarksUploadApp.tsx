@@ -108,10 +108,30 @@ function AIScanModal({ isOpen, onClose, onApply, currentSubjectCode }: AIScanMod
     const streamRef    = useRef<MediaStream | null>(null);
 
     const stopCamera = useCallback(() => {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.srcObject = null;
+        }
         streamRef.current?.getTracks().forEach(t => t.stop());
         streamRef.current = null;
         setCameraActive(false);
     }, []);
+
+    // Attach the media stream after the video element is mounted.
+    useEffect(() => {
+        if (!cameraActive || !videoRef.current || !streamRef.current) return;
+
+        const video = videoRef.current;
+        video.srcObject = streamRef.current;
+
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {
+                // Autoplay may fail on some browsers until a user gesture.
+                toast.error('Camera started, but preview playback was blocked. Tap Open Camera again.');
+            });
+        }
+    }, [cameraActive]);
 
     const resetModal = useCallback(() => {
         stopCamera();
@@ -124,8 +144,8 @@ function AIScanModal({ isOpen, onClose, onApply, currentSubjectCode }: AIScanMod
     const startCamera = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            stopCamera();
             streamRef.current = stream;
-            if (videoRef.current) videoRef.current.srcObject = stream;
             setCameraActive(true);
         } catch {
             toast.error('Camera access denied or unavailable.');
@@ -247,7 +267,7 @@ function AIScanModal({ isOpen, onClose, onApply, currentSubjectCode }: AIScanMod
                         {/* Live camera */}
                         {cameraActive && (
                             <div className="relative rounded-xl overflow-hidden border border-white/10">
-                                <video ref={videoRef} autoPlay playsInline className="w-full rounded-xl" />
+                                <video ref={videoRef} autoPlay playsInline muted className="w-full rounded-xl" />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <div className="absolute inset-x-0 top-2 text-center text-[10px] text-white/40 pointer-events-none">
                                     Align the front page of the answer booklet

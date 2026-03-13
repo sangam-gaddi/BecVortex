@@ -76,6 +76,56 @@ export const TOOL_REGISTRY: VoraTool[] = [
     },
     requiredRoles: ['STUDENT'],
   },
+  {
+    name: 'get_my_student_context',
+    description:
+      'Fetch the current logged-in student context including profile, semester, department, registered subjects, backlogs, payment category, and paid fee IDs.',
+    parameters: {},
+    requiredRoles: ['STUDENT'],
+  },
+  {
+    name: 'get_my_fee_overview',
+    description:
+      'Get current student fee overview: standard fees pending/paid, custom fees pending/paid, and recent payment history.',
+    parameters: {},
+    requiredRoles: ['STUDENT'],
+  },
+  {
+    name: 'calculate_my_selected_fees',
+    description:
+      'Calculate total payable amount for selected standard fee IDs for the current student. Valid fee IDs: tuition, development, hostel, examination.',
+    parameters: {
+      feeIds: { type: 'array', description: 'Array of standard fee IDs', required: true, items: { type: 'string' } },
+    },
+    requiredRoles: ['STUDENT'],
+  },
+  {
+    name: 'open_payment_for_selected_fees',
+    description:
+      'Validate selected fee IDs for the current student and open the BEC Pay app so the student can continue payment.',
+    parameters: {
+      feeIds: { type: 'array', description: 'Array of standard fee IDs to pay', required: true, items: { type: 'string' } },
+    },
+    requiredRoles: ['STUDENT'],
+  },
+  {
+    name: 'verify_my_fee_receipt',
+    description:
+      'Verify a receipt/reference ID for the current student by matching payment record ID, transaction hash, challan ID, or bank reference.',
+    parameters: {
+      receiptId: { type: 'string', description: 'Receipt/reference/transaction identifier', required: true },
+    },
+    requiredRoles: ['STUDENT'],
+  },
+  {
+    name: 'download_my_fee_receipt',
+    description:
+      'Locate a paid receipt for the current student and open the My Receipts app for immediate download/recovery.',
+    parameters: {
+      receiptId: { type: 'string', description: 'Receipt/reference/transaction identifier', required: true },
+    },
+    requiredRoles: ['STUDENT'],
+  },
 
   // ── Faculty management ────────────────────────────────────────────
   {

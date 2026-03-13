@@ -52,6 +52,14 @@ export default function LoginPage() {
         duration: 2000,
       });
 
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('bec-vortex-role', data.userType === 'staff' ? data.user?.role : 'STUDENT');
+        sessionStorage.setItem('bec-vortex-department', data.userType === 'staff' ? (data.user?.department || '') : '');
+        sessionStorage.setItem('bec-vortex-userType', data.userType || 'student');
+        sessionStorage.setItem('bec-vortex-fullName', data.userType === 'staff' ? (data.user?.fullName || '') : (data.user?.name || 'Student'));
+        sessionStorage.setItem('bec-vortex-username', data.userType === 'staff' ? (data.user?.username || '') : (data.user?.usn || identifier.toUpperCase()));
+      }
+
       // Wait for toast then redirect
       setTimeout(() => {
         router.push('/os');

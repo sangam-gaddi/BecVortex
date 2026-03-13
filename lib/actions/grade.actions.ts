@@ -37,7 +37,6 @@ export async function getStudentsForSubjectGrade(subjectCode: string, semester: 
 
         let studentQuery: any = {
             semester: semester.toString(),
-            isRegistered: true
         };
 
         // Enforce department integrity: Faculty can only evaluate students from their own department

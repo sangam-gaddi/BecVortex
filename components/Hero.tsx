@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/all';
 import { TiLocationArrow } from 'react-icons/ti';
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import Button from './Button';
 import VideoPreview from './VideoPreview';
 
@@ -107,7 +108,7 @@ const Hero = () => {
     index === 1 ? `/videos/collge.mp4` : `/videos/hero-${index}.mp4`;
 
   return (
-    <div className="relative h-dvh w-full overflow-x-hidden">
+    <div id="home" className="relative h-dvh w-full overflow-x-hidden">
       {loading && (
         <div className="flex-center absolute z-[100] h-dvh w-full overflow-hidden bg-violet-50">
           <div className="three-body">
@@ -187,11 +188,16 @@ const Hero = () => {
                 const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
                 const usn = (form.elements.namedItem('usn') as HTMLInputElement).value;
                 const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+                const toastId = 'hero-student-login';
 
-                if (!usn || !password) return;
+                if (!usn || !password) {
+                  toast.error('Please fill all fields', { id: toastId });
+                  return;
+                }
 
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Signing in...';
+                toast.loading('Signing in as Student...', { id: toastId });
 
                 try {
                   const response = await fetch('/api/auth/login', {
@@ -201,15 +207,24 @@ const Hero = () => {
                   });
 
                   if (response.ok) {
-                    window.location.href = '/dashboard';
+                    const data = await response.json();
+                    if (typeof window !== 'undefined') {
+                      sessionStorage.setItem('bec-vortex-role', data.userType === 'staff' ? data.user?.role : 'STUDENT');
+                      sessionStorage.setItem('bec-vortex-department', data.userType === 'staff' ? (data.user?.department || '') : '');
+                      sessionStorage.setItem('bec-vortex-userType', data.userType || 'student');
+                      sessionStorage.setItem('bec-vortex-fullName', data.userType === 'staff' ? (data.user?.fullName || '') : (data.user?.name || 'Student'));
+                      sessionStorage.setItem('bec-vortex-username', data.userType === 'staff' ? (data.user?.username || '') : (data.user?.usn || usn.toUpperCase()));
+                    }
+                    toast.success(`Welcome, ${data.userType === 'staff' ? (data.user?.fullName || 'User') : (data.user?.name || 'Student')}!`, { id: toastId });
+                    window.location.href = '/os';
                   } else {
                     const data = await response.json();
-                    alert(data.error || 'Invalid credentials');
+                    toast.error(data.error || 'Invalid credentials', { id: toastId });
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Sign In →';
                   }
-                } catch (err) {
-                  alert('An error occurred. Please try again.');
+                } catch {
+                  toast.error('An error occurred. Please try again.', { id: toastId });
                   submitBtn.disabled = false;
                   submitBtn.textContent = 'Sign In →';
                 }
