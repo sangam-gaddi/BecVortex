@@ -133,7 +133,7 @@ STUDENT (separate auth flow via USN + password)
 
 ### Departments
 
-| Code | Name |
+| Code | Name |||
 |---|---|
 | CS | Computer Science |
 | IS | Information Science |
