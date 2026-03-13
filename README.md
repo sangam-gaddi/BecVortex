@@ -161,6 +161,73 @@ HOD  →  creates  →  OFFICER, FACULTY
 
 No role can create an account of equal or higher level. This is enforced server-side via `canCreateRole()`.
 
+### Hierarchy and Concerned Applications (Mermaid)
+
+```mermaid
+---
+config:
+  layout: elk
+---
+graph TD
+    MASTER["MASTER<br/>Platform Owner"] --> PRINCIPAL["PRINCIPAL<br/>Institution Head"]
+    PRINCIPAL --> HOD["HOD<br/>Department Head"]
+    HOD --> OFFICER["OFFICER<br/>Operations/Admin"]
+    HOD --> FACULTY["FACULTY<br/>Academic Staff"]
+
+    STUDENT["STUDENT<br/>Self-Service"]
+
+    MASTER -.->|"create_account"| PRINCIPAL
+    PRINCIPAL -.->|"create_account"| HOD
+    HOD -.->|"create_account"| OFFICER
+    HOD -.->|"create_account"| FACULTY
+
+    OFFICER -.->|"cannot create"| OFFICER
+    FACULTY -.->|"cannot create"| FACULTY
+    STUDENT -.->|"no staff creation privileges"| STUDENT
+
+    subgraph APPS["Concerned Applications by Role"]
+        AM["account-manager"]
+        TA["teaching-assigner"]
+        CRA["cr-assigner"]
+        FD["faculty-dashboard"]
+        RR["re-registration"]
+        AA["admit-app"]
+        SA["subject-assigner"]
+        MU["marks-upload"]
+        AT["attendance-upload"]
+        REG["course-registration"]
+        PAY["bec-pay"]
+        PORTAL["bec-portal"]
+        CHAT["bec-chat"]
+    end
+
+    MASTER --> AM
+    MASTER --> CHAT
+
+    PRINCIPAL --> AM
+
+    HOD --> AM
+    HOD --> TA
+    HOD --> CRA
+    HOD --> FD
+
+    OFFICER --> RR
+    OFFICER --> AA
+    OFFICER --> SA
+
+    FACULTY --> MU
+    FACULTY --> AT
+
+    STUDENT --> REG
+    STUDENT --> PAY
+    STUDENT --> PORTAL
+
+    classDef role fill:#eef7ff,stroke:#1f4e79,stroke-width:2px,color:#0b2239;
+    classDef app fill:#f5fff1,stroke:#2f6b2f,stroke-width:1.5px,color:#123012;
+    class MASTER,PRINCIPAL,HOD,OFFICER,FACULTY,STUDENT role;
+    class AM,TA,CRA,FD,RR,AA,SA,MU,AT,REG,PAY,PORTAL,CHAT app;
+```
+
 ---
 
 ## Applications
