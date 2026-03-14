@@ -48,16 +48,16 @@ const BEC_APP_IDS = new Set([
   'bec-pay', 'bec-chat', 'bec-portal',
   'account-manager', 'admit-app',
   'subject-directory', 'subject-assigner', 're-registration',
-  'course-registration',
+  'course-registration', 'hall-ticket-generation', 'hall-ticket',
   'teaching-assigner', 'faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner',
 ]);
 
 // Map of role -> which BEC app IDs belong to that role
 const ROLE_APP_MAP: { role: string; label: string; color: string; apps: string[] }[] = [
   { role: 'HOD', label: '📋 HOD', color: 'text-violet-400', apps: ['account-manager', 'teaching-assigner'] },
-  { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration', 'fees-checker', 'edit-fee'] },
+  { role: 'OFFICER', label: '⚙️ Officer', color: 'text-sky-400', apps: ['admit-app', 'subject-directory', 'subject-assigner', 're-registration', 'fees-checker', 'edit-fee', 'hall-ticket-generation'] },
   { role: 'FACULTY', label: '👨‍🏫 Faculty', color: 'text-emerald-400', apps: ['faculty-dashboard', 'marks-upload', 'attendance-upload', 'cr-assigner'] },
-  { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration', 'bec-pay', 'fee-check', 'download-receipts'] },
+  { role: 'STUDENT', label: '🎓 Student', color: 'text-indigo-400', apps: ['bec-portal', 'course-registration', 'bec-pay', 'fee-check', 'download-receipts', 'hall-ticket'] },
 ];
 
 // ── BEC Vortex draggable app icons on the desktop ───────────────────────────

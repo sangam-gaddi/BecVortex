@@ -1,7 +1,7 @@
 "use client";
 import { ComponentType, LazyExoticComponent, lazy } from 'react';
 import dynamic from 'next/dynamic';
-import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid, FileSpreadsheet, CalendarCheck, Star, Receipt, FilePenLine, SearchCheck, Download, Mic } from 'lucide-react';
+import { LucideIcon, FolderOpen, Settings, Mail, Calendar, Image, Music, Terminal, Globe, MessageSquare, FileText, Code, ShoppingBag, CreditCard, MessageCircle, GraduationCap, UserPlus, Book, Users, FileSignature, BookOpen, ClipboardList, LayoutGrid, FileSpreadsheet, CalendarCheck, Star, Receipt, FilePenLine, SearchCheck, Download, Mic, Ticket } from 'lucide-react';
 import { AppMenuConfig, ContextMenuConfig } from '../types';
 
 // Menu Configurations
@@ -51,6 +51,8 @@ const FeesCheckerApp = dynamic(() => import('@/components/os/components/apps/Fee
 const EditFeeApp = dynamic(() => import('@/components/os/components/apps/EditFeeApp').then(m => m.EditFeeApp), { ssr: false });
 const FeeCheckApp = dynamic(() => import('@/components/os/components/apps/FeeCheckApp').then(m => m.FeeCheckApp), { ssr: false });
 const DownloadReceiptsApp = dynamic(() => import('@/components/os/components/apps/DownloadReceiptsApp').then(m => m.DownloadReceiptsApp), { ssr: false });
+const HallTicketGenerationApp = dynamic(() => import('@/components/os/components/apps/HallTicketGenerationApp').then(m => m.HallTicketGenerationApp), { ssr: false });
+const HallTicketApp = dynamic(() => import('@/components/os/components/apps/HallTicketApp').then(m => m.HallTicketApp), { ssr: false });
 
 export interface AppMetadata {
     id: string;
@@ -569,6 +571,38 @@ export const APP_REGISTRY: Record<string, AppMetadata> = {
         ramUsage: 90,
         allowedRoles: ['FACULTY'],
         defaultSize: { width: 750, height: 500 },
+    },
+
+    // ── Hall Ticket Apps ──
+    'hall-ticket-generation': {
+        id: 'hall-ticket-generation',
+        name: 'Hall Ticket Generation',
+        description: 'Generate hall tickets for fee-cleared students',
+        icon: Ticket,
+        iconColor: 'from-amber-500 to-orange-500',
+        iconSolid: '#f59e0b',
+        category: 'admin',
+        isCore: true,
+        component: HallTicketGenerationApp,
+        size: 30,
+        ramUsage: 100,
+        allowedRoles: ['OFFICER', 'HOD', 'MASTER'],
+        defaultSize: { width: 920, height: 620 },
+    },
+    'hall-ticket': {
+        id: 'hall-ticket',
+        name: 'Hall Ticket',
+        description: 'View and download your examination hall ticket',
+        icon: Ticket,
+        iconColor: 'from-sky-500 to-indigo-500',
+        iconSolid: '#0ea5e9',
+        category: 'productivity',
+        isCore: true,
+        component: HallTicketApp,
+        size: 20,
+        ramUsage: 70,
+        allowedRoles: ['STUDENT'],
+        defaultSize: { width: 560, height: 640 },
     },
 };
 

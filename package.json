@@ -86,6 +86,7 @@
     "vaul": "^1.1.2",
     "viem": "^2.21.31",
     "wagmi": "^2.12.15",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

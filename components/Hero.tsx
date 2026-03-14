@@ -16,7 +16,7 @@ const Hero = () => {
   const [hasClicked, setHasClicked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedVideos, setLoadedVideos] = useState(0);
-  const totalVideos = 4;
+  const totalVideos = 5;
   const nextVdRef = useRef<HTMLVideoElement>(null);
   const currentVdRef = useRef<HTMLVideoElement>(null);
   const miniVdRef = useRef<HTMLVideoElement>(null);
@@ -104,8 +104,7 @@ const Hero = () => {
     });
   });
 
-  const getVideoSrc = (index: number) =>
-    index === 1 ? `/videos/collge.mp4` : `/videos/hero-${index}.mp4`;
+  const getVideoSrc = (index: number) => `/videos/hero-seq-${index}.mp4`;
 
   return (
     <div id="home" className="relative h-dvh w-full overflow-x-hidden">

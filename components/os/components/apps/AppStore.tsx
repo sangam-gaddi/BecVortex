@@ -64,6 +64,7 @@ export function AppStore({ owner, onOpenApp }: AppStoreProps) {
         { id: 'utilities', label: t('appStore.categories.utilities') },
         { id: 'development', label: t('appStore.categories.development') },
         { id: 'system', label: t('appStore.categories.system') },
+        { id: 'admin', label: 'Admin' },
         { id: 'academic', label: 'Academic' },
         { id: 'management', label: 'Management' },
     ];
