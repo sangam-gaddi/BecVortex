@@ -3,8 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BEC-BillDesk | Streamline Your Payments',
-  description: 'BEC-BillDesk – Redefine how you manage and pay college fees.',
+  title: 'BEC Vortex | Streamline Your Campus OS',
+  description: 'BEC Vortex – Redefine how you manage campus services, fees, and student operations.',
 };
 
 export default function RootLayout({
