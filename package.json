@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build",
-    "start": "next start -p ${PORT:-3001}"
+    "start": "next start -p ${PORT:-3001}",
+    "cleanup:students:dry": "node --env-file=.env.local scripts/prepare-student-deploy-data.js",
+    "cleanup:students": "node --env-file=.env.local scripts/prepare-student-deploy-data.js --execute"
   },
   "dependencies": {
     "@gsap/react": "^2.1.1",

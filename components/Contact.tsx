@@ -339,26 +339,6 @@ const Contact = () => {
         </div>
       </section>
 
-      <section className="team">
-        <div className="team-header">
-          <h2>The Creators</h2>
-        </div>
-
-        {GRID_LAYOUT.map((row, rowIdx) => (
-          <div className="team-row" key={`row-${rowIdx}`}>
-            {row.map((imageIndex, colIdx) => (
-              <div className="team-col" key={`cell-${rowIdx}-${colIdx}`}>
-                {imageIndex !== null && (
-                  <div className="team-img" data-origin={ORIGINS[imageIndex] || 'left'}>
-                    <img src={`/culture/team/team-${imageIndex + 1}.jpg`} alt="Team" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
-      </section>
-
       <section className="culture-about">
         <div className="container">
           <div className="culture-header">

@@ -155,7 +155,7 @@ const CampusScroll = () => {
         <div ref={containerRef}>
             <section className="campus-hero" id="campus">
                 <div className="campus-hero-img" ref={heroImgRef}>
-                    <img ref={heroImgElementRef} src="/img/gallery-4.webp" alt="BEC Campus" />
+                    <img ref={heroImgElementRef} src="/becmap/becmap.png" alt="BEC Campus" />
                 </div>
 
                 <div className="campus-hero-mask" ref={heroMaskRef} />
