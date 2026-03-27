@@ -64,7 +64,7 @@ It is not a dashboard. It is not a portal. It is an **OS**.
 - Role-based desktop — each user sees only their permitted apps
 - Dock at the bottom for quick app launching
 - Live clock in the menu bar
-- Fully responsive, dark-themed, glassmorphic UI
+- Fully responsive, dark-themed, glassmorphic UI!!
 - Real-time AI assistant (VORA) and live voice agent (ARIA)
 - Real-time college-wide chat with Socket.IO
 
